@@ -10,10 +10,16 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "prisma": {
+    "seed": "npx ts-node --project tsconfig.seed.json prisma/seed.ts"
+  },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@types/pg": "^8.20.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "pg": "^8.21.0",
     "prisma": "^7.8.0",
     "zod": "^4.4.3"
   },

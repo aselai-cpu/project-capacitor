@@ -18,6 +18,8 @@ echo "GOOGLE_GENERATIVE_AI_API_KEY=your-key" > .env   # Google Gemini (free tier
 echo "OPENAI_API_KEY=your-key" > .env                  # OpenAI
 # OR
 echo "ANTHROPIC_API_KEY=your-key" > .env               # Anthropic Claude
+# OR
+echo "MOONSHOT_API_KEY=your-key" > .env                # Moonshot Kimi
 
 # 3. Start the full stack
 docker-compose up --build
@@ -60,7 +62,7 @@ Entity relationships:
 | Database | PostgreSQL + Prisma ORM | Type-safe queries, schema-first migrations, native nested writes for recursive subtask trees |
 | Backend | Express + TypeScript + Zod | Industry-standard Node.js framework, Zod provides runtime type validation matching TypeScript types |
 | Frontend | Vite + React 19 + React Router v7 + Tailwind CSS | Fastest SPA build tool, React's component model ideal for recursive subtask forms, Tailwind accelerates styling |
-| LLM | Vercel AI SDK (Google/OpenAI/Anthropic) | Provider-agnostic — auto-detects provider from API key. `generateObject()` with Zod for type-safe structured output |
+| LLM | Vercel AI SDK (Google/OpenAI/Anthropic/Moonshot) | Provider-agnostic — auto-detects provider from API key. `generateObject()` with Zod for type-safe structured output |
 | Infrastructure | Docker + docker-compose | Single-command deployment, PostgreSQL healthcheck ensures DB ready before backend starts |
 
 ---
@@ -115,7 +117,8 @@ These assumptions were made for ambiguities in the spec:
 | GOOGLE_GENERATIVE_AI_API_KEY | One of these | Google Gemini API key (free tier at ai.google.dev) |
 | OPENAI_API_KEY | required | OpenAI API key |
 | ANTHROPIC_API_KEY | | Anthropic Claude API key |
-| LLM_PROVIDER | No | Force provider: `google`, `openai`, or `anthropic` (auto-detected if not set) |
-| LLM_MODEL | No | Override model name (e.g., `gpt-4o`, `claude-sonnet-4-20250514`, `gemini-2.5-flash`) |
+| MOONSHOT_API_KEY | | Moonshot Kimi API key |
+| LLM_PROVIDER | No | Force provider: `google`, `openai`, `anthropic`, or `moonshot` (auto-detected if not set) |
+| LLM_MODEL | No | Override model name (e.g., `gpt-4o`, `claude-sonnet-4-20250514`, `gemini-2.5-flash`, `kimi-k2.5`) |
 
 Set **one** API key — the app auto-detects which provider to use. The `DATABASE_URL` and PostgreSQL credentials are pre-configured in `docker-compose.yml`.

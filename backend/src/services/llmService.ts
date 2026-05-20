@@ -2,7 +2,7 @@
 //
 // Provider-agnostic LLM skill classification.
 // Auto-detects which provider to use based on which API key is set.
-// Supports: Google Gemini, OpenAI, Anthropic.
+// Supports: Google Gemini, OpenAI, Anthropic, Moonshot Kimi.
 //
 import { generateObject } from 'ai';
 import type { LanguageModel } from 'ai';
@@ -33,6 +33,11 @@ function getModel(): LanguageModel {
     return anthropic(process.env.LLM_MODEL || 'claude-haiku-4-5-20251001');
   }
 
+  if (explicit === 'moonshot' || (!explicit && process.env.MOONSHOT_API_KEY)) {
+    const { moonshotai } = require('@ai-sdk/moonshotai');
+    return moonshotai(process.env.LLM_MODEL || 'kimi-k2.5');
+  }
+
   // Default: Google Gemini
   const { google } = require('@ai-sdk/google');
   return google(process.env.LLM_MODEL || 'gemini-2.5-flash');
@@ -43,6 +48,7 @@ export function getActiveProvider(): string {
   if (explicit) return explicit;
   if (process.env.OPENAI_API_KEY) return 'openai';
   if (process.env.ANTHROPIC_API_KEY) return 'anthropic';
+  if (process.env.MOONSHOT_API_KEY) return 'moonshot';
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return 'google';
   return 'none (no API key set — skill classification will fail-open)';
 }

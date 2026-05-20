@@ -1,0 +1,51 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum TaskStatus {
+  TODO        @map("To-do")
+  IN_PROGRESS @map("In Progress")
+  DONE        @map("Done")
+}
+
+model Developer {
+  id        String   @id @default(uuid())
+  name      String
+  skills    Skill[]
+  tasks     Task[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("developers")
+}
+
+model Skill {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  developers Developer[]
+  tasks      Task[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@map("skills")
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  title       String
+  status      TaskStatus @default(TODO)
+  parentId    String?    @map("parent_id")
+  parent      Task?      @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks    Task[]     @relation("TaskHierarchy")
+  developerId String?    @map("developer_id")
+  developer   Developer? @relation(fields: [developerId], references: [id], onDelete: SetNull)
+  skills      Skill[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@map("tasks")
+}

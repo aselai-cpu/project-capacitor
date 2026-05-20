@@ -74,3 +74,15 @@ Supersedes the `@google/genai` direct dependency from the Gemini design discussi
 
 Pages created:
 - [[wiki/decisions/004-vercel-ai-sdk]] — ADR with code examples, provider switching pattern, Zod schema approach
+
+## [2026-05-21] query | Spec ambiguity analysis (solution architect review)
+
+Analyzed the HTX spec for clarity gaps. Identified 5 ambiguities ranked by implementation risk, each with recommended assumptions:
+1. Status values undefined ("etc.") — assume TODO/IN_PROGRESS/DONE enum
+2. Task List subtask display unspecified — assume tree-table with expand/collapse
+3. Subtask creation scope unclear (create-only vs post-creation) — assume both
+4. LLM sync vs async not specified — assume synchronous with timeout fallback
+5. API single vs list endpoints ambiguous — assume both GET /tasks and GET /tasks/:id
+
+Pages created:
+- [[wiki/notes/spec-ambiguities]] — full analysis with cross-links to affected requirements and decisions

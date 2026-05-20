@@ -34,3 +34,4 @@ Content catalog for Project Capacitor wiki. Read this first.
 - [[wiki/notes/meta-constraints]] -- Important notes: assumptions, AI usage, timeline, sample task data from wireframes
 - [[wiki/notes/gemini-design-discussion]] -- DDD/TOGAF exploration: bounded contexts, invariants, implementation patterns, API contracts
 - [[wiki/notes/research-papers]] -- 11 papers across 5 pillars: LLM in RE, skill allocation, hierarchical state, structured LLM output, React architecture
+- [[wiki/notes/spec-ambiguities]] -- Top 5 spec ambiguities with recommended assumptions: status values, subtask display, subtask creation scope, LLM sync/async, API granularity

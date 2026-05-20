@@ -28,7 +28,7 @@ router.post('/', validate(createTaskSchema), async (req, res) => {
 });
 
 router.patch('/:id', validate(updateTaskSchema), async (req, res) => {
-  const result = await taskService.updateTask(req.params.id, req.body);
+  const result = await taskService.updateTask(req.params.id as string, req.body);
   if ('error' in result) {
     return res.status(result.status).json(result);
   }

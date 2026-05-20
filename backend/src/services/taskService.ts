@@ -74,8 +74,9 @@ export async function createTask(input: CreateTaskInput) {
         timeout,
       ]);
       (results as PromiseSettledResult<string[]>[]).forEach((r, i) => {
-        if (r.status === 'fulfilled') {
-          needsSkills[i].skillIds = r.value
+        const node = needsSkills[i];
+        if (r.status === 'fulfilled' && node) {
+          node.skillIds = r.value
             .map(name => skillMap.get(name))
             .filter(Boolean) as string[];
         }

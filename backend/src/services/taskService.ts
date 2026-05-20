@@ -1,6 +1,6 @@
 // backend/src/services/taskService.ts
 import prisma from '../lib/prisma.js';
-import { CreateTaskInput } from '../types.js';
+import type { CreateTaskInput } from '../types.js';
 import { TaskStatus } from '@prisma/client';
 
 const taskInclude = {

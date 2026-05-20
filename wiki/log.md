@@ -86,3 +86,17 @@ Analyzed the HTX spec for clarity gaps. Identified 5 ambiguities ranked by imple
 
 Pages created:
 - [[wiki/notes/spec-ambiguities]] — full analysis with cross-links to affected requirements and decisions
+
+## [2026-05-21] query | Ambiguity solutions (UX heuristics + architecture)
+
+Proposed concrete solutions for all 5 spec ambiguities:
+1. Three-state FSM (TODO/IN_PROGRESS/DONE) with transition rules and cascade guard
+2. Expandable tree-table with lazy subtask loading and capped indent depth
+3. Dual subtask creation: atomic tree on Create page + inline "+" on List page (same POST endpoint)
+4. Synchronous LLM with 5s timeout, graceful degradation via skillSource enum (user/llm/pending/failed)
+5. RESTful endpoints with subtaskCount on list, full recursive tree on detail, depth query param
+
+New data model element: `skillSource` field on Task entity.
+
+Pages created:
+- [[wiki/notes/ambiguity-solutions]] — full solutions with diagrams, API shapes, frontend UX patterns

@@ -3,6 +3,7 @@ type: note
 title: Project Overview
 created: 2026-05-20
 updated: 2026-05-20
+
 ---
 # Project Overview
 
@@ -26,7 +27,7 @@ The application has 7 parts, to be completed in 3 calendar days (with up to 2-da
 4. **[[wiki/requirements/part4-subtasks|Part 4: Subtask Feature]]** — Nested subtasks with recursive structure and status cascade rules
 5. **[[wiki/requirements/part5-llm-skill-id|Part 5: LLM Skill Identification]]** — Auto-identify required skills from task title using LLM
 6. **[[wiki/requirements/part6-containerization|Part 6: Containerization]]** — Docker/docker-compose for the full solution
-7. **Part 7: Deliverables** — Push to GitHub, README with setup docs, system design, API docs
+7. **[[wiki/requirements/part7-deliverables|Part 7: Deliverables]]** — Push to GitHub, README with setup docs, system design, API docs, library justification
 
 ## Key Business Rules
 

@@ -20,6 +20,7 @@ Content catalog for Project Capacitor wiki. Read this first.
 - [[wiki/requirements/part4-subtasks]] -- Part 4: Nested subtasks, status cascade rules
 - [[wiki/requirements/part5-llm-skill-id]] -- Part 5: LLM auto-identifies required skills from task title
 - [[wiki/requirements/part6-containerization]] -- Part 6: Docker/docker-compose for full stack
+- [[wiki/requirements/part7-deliverables]] -- Part 7: Public GitHub repo, README with setup, design, API docs
 
 ## Decisions
 
@@ -27,4 +28,4 @@ Content catalog for Project Capacitor wiki. Read this first.
 
 ## Notes
 
-(none yet)
+- [[wiki/notes/meta-constraints]] -- Important notes: assumptions, AI usage, timeline, sample task data from wireframes

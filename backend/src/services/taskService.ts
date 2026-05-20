@@ -3,6 +3,7 @@ import prisma from '../lib/prisma.js';
 import type { CreateTaskInput } from '../types.js';
 import { TaskStatus } from '@prisma/client';
 import { classifySkills } from './llmService.js';
+import { computeFlatListWithDepth, buildTree, toPrismaCreate, collectNodesWithoutSkills } from './taskUtils.js';
 
 const taskInclude = {
   skills: { select: { id: true, name: true } },
@@ -15,28 +16,6 @@ export async function getAllTasksFlat() {
   return computeFlatListWithDepth(tasks);
 }
 
-function computeFlatListWithDepth(tasks: any[]) {
-  const childrenMap = new Map<string | null, any[]>();
-  for (const task of tasks) {
-    const key = task.parentId ?? null;
-    if (!childrenMap.has(key)) childrenMap.set(key, []);
-    childrenMap.get(key)!.push(task);
-  }
-  // Sort siblings by createdAt
-  for (const children of childrenMap.values()) {
-    children.sort((a: any, b: any) => a.createdAt.getTime() - b.createdAt.getTime());
-  }
-  const result: any[] = [];
-  function walk(parentId: string | null, depth: number) {
-    for (const child of childrenMap.get(parentId) ?? []) {
-      result.push({ ...child, depth });
-      walk(child.id, depth + 1);
-    }
-  }
-  walk(null, 0);
-  return result;
-}
-
 // --- GET /api/tasks/:id (recursive tree) ---
 export async function getTaskById(id: string) {
   const tasks = await prisma.task.findMany({ include: taskInclude });
@@ -45,26 +24,13 @@ export async function getTaskById(id: string) {
   return buildTree(task, tasks);
 }
 
-function buildTree(task: any, allTasks: any[]): any {
-  const children = allTasks.filter(t => t.parentId === task.id);
-  return {
-    ...task,
-    subtasks: children.map(c => buildTree(c, allTasks)),
-  };
-}
-
 // --- POST /api/tasks (create tree) ---
 export async function createTask(input: CreateTaskInput) {
   // --- LLM enrichment ---
   const skills = await prisma.skill.findMany();
   const skillMap = new Map(skills.map(s => [s.name, s.id]));
 
-  const needsSkills: CreateTaskInput[] = [];
-  function collectEmpty(node: CreateTaskInput) {
-    if (node.skillIds.length === 0) needsSkills.push(node);
-    node.subtasks.forEach(collectEmpty);
-  }
-  collectEmpty(input);
+  const needsSkills = collectNodesWithoutSkills(input);
 
   if (needsSkills.length > 0) {
     try {
@@ -97,21 +63,6 @@ export async function createTask(input: CreateTaskInput) {
 
   // Re-fetch as tree for response
   return getTaskById(created.id);
-}
-
-function toPrismaCreate(node: CreateTaskInput, isRoot = true): any {
-  return {
-    title: node.title,
-    // Only set parentId on the root node (for "Add Subtask" from List page).
-    // For nested children, Prisma auto-wires parentId via subtasks: { create: [...] }.
-    ...(isRoot && node.parentId ? { parent: { connect: { id: node.parentId } } } : {}),
-    skills: node.skillIds.length > 0
-      ? { connect: node.skillIds.map(id => ({ id })) }
-      : undefined,
-    subtasks: node.subtasks.length > 0
-      ? { create: node.subtasks.map(child => toPrismaCreate(child, false)) }
-      : undefined,
-  };
 }
 
 // --- DELETE /api/tasks (test cleanup) ---

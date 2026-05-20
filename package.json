@@ -1,0 +1,28 @@
+{
+  "name": "capacitor",
+  "version": "1.0.0",
+  "description": "Project Capacitor is a full-stack Task Assignment application built for the xDigital AI Products Team at HTX. It features skill-constrained developer assignment, recursive subtasks with status cascade rules, and automated LLM-based skill classification.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aselai-cpu/project-capacitor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aselai-cpu/project-capacitor/issues"
+  },
+  "homepage": "https://github.com/aselai-cpu/project-capacitor#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}

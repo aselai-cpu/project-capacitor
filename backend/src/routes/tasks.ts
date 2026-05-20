@@ -35,4 +35,10 @@ router.patch('/:id', validate(updateTaskSchema), async (req, res) => {
   res.json(result.data);
 });
 
+// Test cleanup endpoint — deletes all tasks (for E2E test isolation)
+router.delete('/', async (_, res) => {
+  await taskService.deleteAllTasks();
+  res.json({ deleted: true });
+});
+
 export default router;

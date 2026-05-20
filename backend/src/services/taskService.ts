@@ -113,6 +113,11 @@ function toPrismaCreate(node: CreateTaskInput, isRoot = true): any {
   };
 }
 
+// --- DELETE /api/tasks (test cleanup) ---
+export async function deleteAllTasks() {
+  await prisma.task.deleteMany();
+}
+
 // --- PATCH /api/tasks/:id (update with guards) ---
 export async function updateTask(id: string, data: { status?: string; developerId?: string | null }) {
   const task = await prisma.task.findUnique({

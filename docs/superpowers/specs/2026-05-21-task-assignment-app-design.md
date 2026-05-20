@@ -147,7 +147,31 @@ Response: Array of tasks, each with `parentId`, computed `depth` field, populate
 ]
 ```
 
-Ordering: parent tasks first, subtasks ordered by creation time, depth-first traversal.
+Ordering: depth-first pre-order traversal — parent before its children, siblings ordered by `createdAt`.
+
+**Computing `depth`:** Done in-memory after a single `prisma.task.findMany()`. Build a parent→children map from `parentId`, then walk the tree recursively starting from root nodes (`parentId === null`), assigning `depth = 0` for roots and `depth = parent.depth + 1` for children. Dataset is small (<100 tasks) so in-memory traversal is efficient.
+
+```typescript
+function computeFlatListWithDepth(tasks: Task[]): (Task & { depth: number })[] {
+  const childrenMap = new Map<string | null, Task[]>();
+  for (const task of tasks) {
+    const key = task.parentId ?? null;
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(task);
+  }
+
+  const result: (Task & { depth: number })[] = [];
+  function walk(parentId: string | null, depth: number) {
+    const children = childrenMap.get(parentId) ?? [];
+    for (const child of children) {
+      result.push({ ...child, depth });
+      walk(child.id, depth + 1);
+    }
+  }
+  walk(null, 0);
+  return result;
+}
+```
 
 ---
 
@@ -163,13 +187,16 @@ Response: Single task with nested `subtasks[]` array (recursive).
   "parentId": null,
   "skills": [{ "id": "uuid", "name": "Frontend" }],
   "developer": { "id": "uuid", "name": "Alice" },
+  "createdAt": "2026-05-21T00:00:00Z",
   "subtasks": [
     {
       "id": "uuid",
       "title": "Design mobile layout",
       "status": "TODO",
+      "parentId": "parent-uuid",
       "skills": [...],
       "developer": null,
+      "createdAt": "2026-05-21T00:00:00Z",
       "subtasks": []
     }
   ]
@@ -209,6 +236,37 @@ Behavior:
 3. On LLM failure: save with empty skills (fail-open)
 4. Transform to Prisma nested create → commit atomically via `prisma.$transaction()`
 5. Return created task tree (same shape as GET /:id)
+
+**Recursive tree-to-Prisma transform:**
+
+```typescript
+function toPrismaCreate(node: CreateTaskInput): Prisma.TaskCreateInput {
+  return {
+    title: node.title,
+    skills: {
+      connect: node.skillIds.map(id => ({ id })),
+    },
+    subtasks: node.subtasks.length > 0
+      ? { create: node.subtasks.map(child => toPrismaCreate(child)) }
+      : undefined,
+  };
+}
+
+// Usage in taskService.create():
+const prismaData = toPrismaCreate(enrichedPayload);
+const created = await prisma.$transaction(async (tx) => {
+  return tx.task.create({
+    data: prismaData,
+    include: {
+      skills: true,
+      developer: true,
+      subtasks: { include: { skills: true, developer: true } },
+    },
+  });
+});
+```
+
+Note: Prisma's nested `create` auto-wires `parentId` for child tasks.
 
 Zod schema:
 ```typescript
@@ -440,6 +498,26 @@ services:
 volumes:
   pgdata:
 ```
+
+### Frontend-Backend Networking
+
+The SPA runs in the browser and makes `fetch()` calls to the backend API. In Docker, the browser cannot reach `http://backend:5000` (that's an internal Docker network hostname). Two configurations are needed:
+
+**Backend CORS:** Allow requests from the frontend origin.
+```typescript
+// backend/src/index.ts
+import cors from 'cors';
+app.use(cors({ origin: 'http://localhost:3000' }));
+```
+
+**Frontend API base URL:** Hardcoded to `http://localhost:5000` (the backend's published port).
+```typescript
+// frontend/src/lib/api.ts
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const fetchTasks = () => fetch(`${API_BASE}/api/tasks`).then(r => r.json());
+```
+
+**Why not a reverse proxy:** A production setup would use Nginx to proxy `/api` requests to the backend (avoiding CORS entirely). For the take-home MVP, direct CORS is simpler and avoids Nginx configuration complexity. Note in README as a production improvement.
 
 ### Startup sequence
 

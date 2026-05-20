@@ -34,3 +34,31 @@ docs/
 - Update relevant docs when adding features or changing behavior
 - Each doc must be clearly one type — don't mix tutorials with reference, or how-to guides with explanation
 - Use `/diataxis-documentation` skill when writing or reviewing docs
+
+## Project Wiki
+
+LLM-maintained knowledge base at `wiki/`. Source documents live in `raw/` (immutable — never modify).
+
+**Before answering any project question**, read `wiki/index.md` to find relevant pages, then read those pages.
+
+### Ground Rules
+
+1. Never modify files in `raw/`
+2. Always read `wiki/index.md` first when answering project questions
+3. Every new page must be added to `wiki/index.md`
+4. Every action must be logged in `wiki/log.md`
+5. Prefer updating existing pages over creating new ones
+
+### Page Conventions
+
+- YAML frontmatter on all pages: `type`, `title`, `created`, `updated`
+- Cross-references use `[[wikilink]]` syntax
+- Index entries: `- [[wiki/category/filename]] -- one-line description`
+- Log entries: `## [YYYY-MM-DD] verb | subject` — verbs: `init` | `ingest` | `decision` | `query` | `lint` | `update`
+
+### Workflows
+
+- **`ingest [source]`** — read source from `raw/`, write/update wiki pages, update index, update overview if material, append to log
+- **`query [question]`** — read index → read relevant pages → synthesize answer with `[[page]]` citations → offer to file valuable answers as new pages
+- **`record decision: [title]`** — write ADR to `wiki/decisions/NNN-kebab-title.md`, cross-link, update index, log it
+- **`lint wiki`** — scan for orphan pages, missing cross-links, stale content; report without auto-fixing

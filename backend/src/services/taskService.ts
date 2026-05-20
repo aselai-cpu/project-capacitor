@@ -11,6 +11,53 @@ const taskInclude = {
   developer: { select: { id: true, name: true } },
 };
 
+// --- Discriminated union return type for updateTask ---
+export type UpdateResult =
+  | { success: true; data: any; status: 200 }
+  | { success: false; error: string; status: 400 | 404 | 422; details?: unknown };
+
+// --- Validation helpers ---
+function validateStatusCascade(subtasks: any[], newStatus: string): UpdateResult | null {
+  if (newStatus !== 'DONE') return null;
+  const pending = subtasks.filter(s => s.status !== 'DONE');
+  if (pending.length === 0) return null;
+  return {
+    success: false,
+    error: 'Cannot mark as done: subtasks not completed',
+    status: 400,
+    details: { pending_subtasks: pending.map(s => ({ id: s.id, title: s.title, status: s.status })) },
+  };
+}
+
+async function validateAssignment(
+  taskSkills: any[],
+  developerId: string,
+): Promise<UpdateResult | null> {
+  const developer = await prisma.developer.findUnique({
+    where: { id: developerId },
+    include: { skills: true },
+  });
+  if (!developer) {
+    return { success: false, error: 'Developer not found', status: 404 };
+  }
+
+  const devSkillIds = new Set(developer.skills.map((s: any) => s.id));
+  const taskSkillIds = taskSkills.map((s: any) => s.id);
+  const missing = taskSkillIds.filter((id: string) => !devSkillIds.has(id));
+  if (missing.length > 0) {
+    return {
+      success: false,
+      error: 'Developer lacks required skills',
+      status: 422,
+      details: {
+        required: taskSkills.map((s: any) => s.name),
+        developer_skills: developer.skills.map((s: any) => s.name),
+      },
+    };
+  }
+  return null;
+}
+
 // --- GET /api/tasks (flat list with depth) ---
 export async function getAllTasksFlat() {
   const tasks = await prisma.task.findMany({ include: taskInclude });
@@ -19,10 +66,12 @@ export async function getAllTasksFlat() {
 
 // --- GET /api/tasks/:id (recursive tree) ---
 export async function getTaskById(id: string) {
-  const tasks = await prisma.task.findMany({ include: taskInclude });
-  const task = tasks.find(t => t.id === id);
-  if (!task) return null;
-  return buildTree(task, tasks);
+  const exists = await prisma.task.findUnique({ where: { id }, select: { id: true } });
+  if (!exists) return null;
+
+  const allTasks = await prisma.task.findMany({ include: taskInclude });
+  const task = allTasks.find(t => t.id === id)!;
+  return buildTree(task, allTasks);
 }
 
 // --- POST /api/tasks (create tree) ---
@@ -74,44 +123,26 @@ export async function deleteAllTasks() {
 }
 
 // --- PATCH /api/tasks/:id (update with guards) ---
-export async function updateTask(id: string, data: { status?: string; developerId?: string | null }) {
+export async function updateTask(
+  id: string,
+  data: { status?: string; developerId?: string | null },
+): Promise<UpdateResult> {
   const task = await prisma.task.findUnique({
     where: { id },
     include: { skills: true, subtasks: true },
   });
-  if (!task) return { error: 'Task not found', status: 404 };
+  if (!task) return { success: false, error: 'Task not found', status: 404 };
 
   // Invariant B: cascade guard on DONE
-  if (data.status === 'DONE') {
-    const pendingSubtasks = task.subtasks.filter(s => s.status !== 'DONE');
-    if (pendingSubtasks.length > 0) {
-      return {
-        error: 'Cannot mark as done: subtasks not completed',
-        pending_subtasks: pendingSubtasks.map(s => ({ id: s.id, title: s.title, status: s.status })),
-        status: 400,
-      };
-    }
+  if (data.status) {
+    const cascadeError = validateStatusCascade(task.subtasks, data.status);
+    if (cascadeError) return cascadeError;
   }
 
   // Invariant A: skill superset guard on assignment
   if (data.developerId) {
-    const developer = await prisma.developer.findUnique({
-      where: { id: data.developerId },
-      include: { skills: true },
-    });
-    if (!developer) return { error: 'Developer not found', status: 404 };
-
-    const devSkillIds = new Set(developer.skills.map(s => s.id));
-    const taskSkillIds = task.skills.map(s => s.id);
-    const missing = taskSkillIds.filter(id => !devSkillIds.has(id));
-    if (missing.length > 0) {
-      return {
-        error: 'Developer lacks required skills',
-        required: task.skills.map(s => s.name),
-        developer_skills: developer.skills.map(s => s.name),
-        status: 422,
-      };
-    }
+    const assignmentError = await validateAssignment(task.skills, data.developerId);
+    if (assignmentError) return assignmentError;
   }
 
   const updateData: { status?: TaskStatus; developerId?: string | null } = {};
@@ -123,5 +154,5 @@ export async function updateTask(id: string, data: { status?: string; developerI
     data: updateData,
     include: taskInclude,
   });
-  return { data: updated, status: 200 };
+  return { success: true, data: updated, status: 200 };
 }

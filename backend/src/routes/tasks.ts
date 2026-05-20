@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { validate } from '../middleware/validate.js';
 import { createTaskSchema, updateTaskSchema } from '../types.js';
 import * as taskService from '../services/taskService.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 
 const router = Router();
 
@@ -27,13 +28,14 @@ router.post('/', validate(createTaskSchema), async (req, res) => {
   }
 });
 
-router.patch('/:id', validate(updateTaskSchema), async (req, res) => {
+router.patch('/:id', validate(updateTaskSchema), asyncHandler(async (req, res) => {
   const result = await taskService.updateTask(req.params.id as string, req.body);
-  if ('error' in result) {
-    return res.status(result.status).json(result);
+  if (!result.success) {
+    res.status(result.status).json({ error: result.error, ...(result.details ? { details: result.details } : {}) });
+    return;
   }
   res.json(result.data);
-});
+}));
 
 // Test cleanup endpoint — deletes all tasks (for E2E test isolation)
 router.delete('/', async (_, res) => {

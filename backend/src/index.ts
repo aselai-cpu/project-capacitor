@@ -14,7 +14,8 @@ app.use(express.json());
 app.get('/api/health', async (_, res) => {
   try {
     await (await import('./lib/prisma.js')).default.$queryRawUnsafe('SELECT 1');
-    res.json({ status: 'ok', db: 'connected' });
+    const { getActiveProvider } = await import('./services/llmService.js');
+    res.json({ status: 'ok', db: 'connected', llm: getActiveProvider() });
   } catch {
     res.status(503).json({ status: 'degraded', db: 'disconnected' });
   }

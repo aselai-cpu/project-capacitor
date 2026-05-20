@@ -6,21 +6,25 @@ Project Capacitor is a full-stack Task Assignment application built for the xDig
 
 ## Quick Start
 
-**Prerequisites:** Docker, Docker Compose, Google Gemini API key.
+**Prerequisites:** Docker, Docker Compose, and an API key from any supported LLM provider.
 
 ```bash
 # 1. Clone the repository
 git clone <repo-url> && cd project-capacitor
 
-# 2. Set your Gemini API key
-echo "GOOGLE_GENERATIVE_AI_API_KEY=your-key-here" > .env
+# 2. Set your LLM API key (pick ONE — auto-detected)
+echo "GOOGLE_GENERATIVE_AI_API_KEY=your-key" > .env   # Google Gemini (free tier available)
+# OR
+echo "OPENAI_API_KEY=your-key" > .env                  # OpenAI
+# OR
+echo "ANTHROPIC_API_KEY=your-key" > .env               # Anthropic Claude
 
 # 3. Start the full stack
 docker-compose up --build
 
 # 4. Open the app
 # Frontend: http://localhost:3000
-# Backend API: http://localhost:5000/api/health
+# Backend API: http://localhost:5000/api/health (shows active LLM provider)
 ```
 
 The database is automatically initialized with seed data (4 developers, 2 skills).
@@ -56,7 +60,7 @@ Entity relationships:
 | Database | PostgreSQL + Prisma ORM | Type-safe queries, schema-first migrations, native nested writes for recursive subtask trees |
 | Backend | Express + TypeScript + Zod | Industry-standard Node.js framework, Zod provides runtime type validation matching TypeScript types |
 | Frontend | Vite + React 19 + React Router v7 + Tailwind CSS | Fastest SPA build tool, React's component model ideal for recursive subtask forms, Tailwind accelerates styling |
-| LLM | Vercel AI SDK + Gemini 2.5 Flash | Provider-agnostic abstraction with `generateObject()` for type-safe structured output via Zod schemas |
+| LLM | Vercel AI SDK (Google/OpenAI/Anthropic) | Provider-agnostic — auto-detects provider from API key. `generateObject()` with Zod for type-safe structured output |
 | Infrastructure | Docker + docker-compose | Single-command deployment, PostgreSQL healthcheck ensures DB ready before backend starts |
 
 ---
@@ -97,7 +101,7 @@ These assumptions were made for ambiguities in the spec:
 
 - Upgrade to collapsible tree-table on Task List page for better UX at scale
 - Add Nginx reverse proxy to eliminate CORS (production deployment)
-- Multi-provider LLM support (OpenAI, Anthropic) via environment variable switching
+- ~~Multi-provider LLM support~~ ✅ Implemented — auto-detects Google/OpenAI/Anthropic from API key
 - Proficiency levels on Developer-Skill relationship (Novice/Competent/Expert)
 - Pagination for task list endpoint (cursor-based)
 - Multi-stage Docker builds for smaller production images
@@ -108,6 +112,10 @@ These assumptions were made for ambiguities in the spec:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| GOOGLE_GENERATIVE_AI_API_KEY | Yes | Gemini API key for skill classification |
+| GOOGLE_GENERATIVE_AI_API_KEY | One of these | Google Gemini API key (free tier at ai.google.dev) |
+| OPENAI_API_KEY | required | OpenAI API key |
+| ANTHROPIC_API_KEY | | Anthropic Claude API key |
+| LLM_PROVIDER | No | Force provider: `google`, `openai`, or `anthropic` (auto-detected if not set) |
+| LLM_MODEL | No | Override model name (e.g., `gpt-4o`, `claude-sonnet-4-20250514`, `gemini-2.5-flash`) |
 
-The `DATABASE_URL` and PostgreSQL credentials are pre-configured in `docker-compose.yml`.
+Set **one** API key — the app auto-detects which provider to use. The `DATABASE_URL` and PostgreSQL credentials are pre-configured in `docker-compose.yml`.

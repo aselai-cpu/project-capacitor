@@ -20,7 +20,12 @@ services:
     ports: ["5000:5000"]
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/capacitor
-      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
+      # LLM provider — set whichever API key you have (auto-detected)
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
+      LLM_MODEL: ${LLM_MODEL:-}
     depends_on:
       db:
         condition: service_healthy

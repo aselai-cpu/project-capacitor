@@ -7,6 +7,7 @@
 import { generateObject } from 'ai';
 import type { LanguageModel } from 'ai';
 import { z } from 'zod';
+import { logger } from '../lib/logger.js';
 
 const skillSchema = z.object({
   skills: z.array(z.enum(['Frontend', 'Backend']))
@@ -63,7 +64,7 @@ export async function classifySkills(title: string): Promise<string[]> {
     });
     return object.skills;
   } catch (err) {
-    console.warn('LLM classify error for title:', title, err);
+    logger.warn({ title, err }, 'LLM classify failed');
     return [];
   }
 }

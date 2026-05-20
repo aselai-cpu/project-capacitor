@@ -1,5 +1,6 @@
 // backend/src/services/taskService.ts
 import prisma from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 import type { CreateTaskInput } from '../types.js';
 import { TaskStatus } from '@prisma/client';
 import { classifySkills } from './llmService.js';
@@ -99,7 +100,7 @@ export async function createTask(input: CreateTaskInput) {
         }
       });
     } catch (err) {
-      console.warn('LLM skill classification timed out or failed:', err);
+      logger.warn({ err }, 'LLM skill classification timed out or failed');
     }
   }
 

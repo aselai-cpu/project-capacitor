@@ -4,6 +4,7 @@ import { validate } from '../middleware/validate.js';
 import { createTaskSchema, updateTaskSchema } from '../types.js';
 import * as taskService from '../services/taskService.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
+import { logger } from '../lib/logger.js';
 
 const router = Router();
 
@@ -23,7 +24,7 @@ router.post('/', validate(createTaskSchema), async (req, res) => {
     const task = await taskService.createTask(req.body);
     res.status(201).json(task);
   } catch (err) {
-    console.error('Task creation error:', err);
+    logger.error({ err }, 'Task creation failed');
     res.status(500).json({ error: 'Internal server error' });
   }
 });

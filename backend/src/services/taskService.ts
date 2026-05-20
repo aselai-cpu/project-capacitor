@@ -2,6 +2,7 @@
 import prisma from '../lib/prisma.js';
 import type { CreateTaskInput } from '../types.js';
 import { TaskStatus } from '@prisma/client';
+import { classifySkills } from './llmService.js';
 
 const taskInclude = {
   skills: { select: { id: true, name: true } },
@@ -54,6 +55,35 @@ function buildTree(task: any, allTasks: any[]): any {
 
 // --- POST /api/tasks (create tree) ---
 export async function createTask(input: CreateTaskInput) {
+  // --- LLM enrichment ---
+  const skills = await prisma.skill.findMany();
+  const skillMap = new Map(skills.map(s => [s.name, s.id]));
+
+  const needsSkills: CreateTaskInput[] = [];
+  function collectEmpty(node: CreateTaskInput) {
+    if (node.skillIds.length === 0) needsSkills.push(node);
+    node.subtasks.forEach(collectEmpty);
+  }
+  collectEmpty(input);
+
+  if (needsSkills.length > 0) {
+    try {
+      const timeout = new Promise<never>((_, rej) => setTimeout(() => rej('timeout'), 5000));
+      const results = await Promise.race([
+        Promise.allSettled(needsSkills.map(n => classifySkills(n.title))),
+        timeout,
+      ]);
+      (results as PromiseSettledResult<string[]>[]).forEach((r, i) => {
+        if (r.status === 'fulfilled') {
+          needsSkills[i].skillIds = r.value
+            .map(name => skillMap.get(name))
+            .filter(Boolean) as string[];
+        }
+      });
+    } catch { /* timeout — fail-open */ }
+  }
+
+  // --- Prisma write (atomic) ---
   const prismaData = toPrismaCreate(input);
 
   // Atomic transaction — entire tree succeeds or fails together

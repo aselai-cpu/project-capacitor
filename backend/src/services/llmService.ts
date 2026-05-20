@@ -10,7 +10,7 @@ const skillSchema = z.object({
 export async function classifySkills(title: string): Promise<string[]> {
   try {
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: google(process.env.LLM_MODEL || 'gemini-2.5-flash'),
       schema: skillSchema,
       prompt: `You are a task classifier. Given this software task description, identify which technical skills it requires. Only classify as "Frontend" (UI, CSS, components, pages) or "Backend" (APIs, databases, servers, security) or both.\n\nTask: "${title}"`,
     });

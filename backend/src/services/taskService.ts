@@ -84,7 +84,8 @@ export async function createTask(input: CreateTaskInput) {
 
   if (needsSkills.length > 0) {
     try {
-      const timeout = new Promise<never>((_, rej) => setTimeout(() => rej('timeout'), 5000));
+      const LLM_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS) || 5000;
+      const timeout = new Promise<never>((_, rej) => setTimeout(() => rej('timeout'), LLM_TIMEOUT_MS));
       const results = await Promise.race([
         Promise.allSettled(needsSkills.map(n => classifySkills(n.title))),
         timeout,

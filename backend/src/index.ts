@@ -7,10 +7,18 @@ import tasksRouter from './routes/tasks.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:5173'] }));
+const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://localhost:5173').split(',');
+app.use(cors({ origin: CORS_ORIGINS }));
 app.use(express.json());
 
-app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
+app.get('/api/health', async (_, res) => {
+  try {
+    await (await import('./lib/prisma.js')).default.$queryRawUnsafe('SELECT 1');
+    res.json({ status: 'ok', db: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'degraded', db: 'disconnected' });
+  }
+});
 
 app.use('/api/skills', skillsRouter);
 app.use('/api/developers', developersRouter);

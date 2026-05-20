@@ -40,3 +40,18 @@ Pages created:
 
 Pages updated:
 - [[wiki/index]] — added decisions and notes entries
+
+## [2026-05-20] ingest | Research papers (7 PDFs in raw/papers/)
+
+Sources: `[[raw/papers/01-llm-in-requirement-engineering.pdf]]` through `[[raw/papers/06b-structural-complexity-htn-planning.pdf]]`
+
+Ingested 7 research papers across 3 pillars referenced in the Gemini design discussion:
+- Pillar 1 (LLM in RE): systematic review of 29 studies; empirical study of AI-generated user stories with US-Prompt technique
+- Pillar 2 (Skill allocation): TASE skill-matching system with weighted scoring; SBSPM literature review of 52 studies
+- Pillar 3 (Hierarchical state): DDD by Eric Evans (sample); HTN planning with state constraints (IJCAI-17); structural complexity analysis of HTN (arXiv 2025)
+
+Pages created:
+- [[wiki/notes/research-papers]] — consolidated summaries with project relevance for all 7 papers
+
+Pages updated:
+- [[wiki/index]] — added research papers note

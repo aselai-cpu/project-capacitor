@@ -32,4 +32,4 @@ Content catalog for Project Capacitor wiki. Read this first.
 
 - [[wiki/notes/meta-constraints]] -- Important notes: assumptions, AI usage, timeline, sample task data from wireframes
 - [[wiki/notes/gemini-design-discussion]] -- DDD/TOGAF exploration: bounded contexts, invariants, implementation patterns, API contracts
-- [[wiki/notes/research-papers]] -- 7 papers across 3 pillars: LLM in RE, skill-constrained allocation, hierarchical state governance
+- [[wiki/notes/research-papers]] -- 11 papers across 5 pillars: LLM in RE, skill allocation, hierarchical state, structured LLM output, React architecture

@@ -68,3 +68,39 @@ Papers referenced in [[wiki/notes/gemini-design-discussion]] across three pillar
 - **Summary:** Refined complexity analysis of three HTN problems: Plan Verification, Plan Existence, State Reachability. Identifies polynomial-time solvable cases based on structural properties (generalized partial order width). Establishes algorithmic meta-theorem for lifting tractability from primitive to compound networks.
 - **Key findings:** All three problems are NP-hard even on simple tree-like networks. However, polynomial-time algorithms exist for networks of bounded "generalized partial order width." The task hierarchy decomposition concept maps to our recursive subtask tree.
 - **Relevance to project:** Theoretical confirmation that hierarchical task structures are computationally hard in general, but our specific case (simple parent-child status checks) is a tractable special case. No need for complex planning algorithms — our application-layer recursive check is sufficient.
+
+## Pillar 4: Structured LLM Output (Gap Fill)
+
+### Paper 07: JSONSchemaBench — Benchmark for Structured Outputs
+- **Source:** `[[raw/papers/07-structured-output-benchmark.pdf]]`
+- **Authors:** Geng, Cooper, Moskal, Jenkins, Berman, Ranchin, West, Horvitz, Nori (2025)
+- **Venue:** arXiv:2501.10868 (EPFL + Microsoft)
+- **Summary:** Introduces JSONSchemaBench, a benchmark of 10K real-world JSON schemas to evaluate constrained decoding frameworks. Evaluates 6 frameworks (Guidance, Outlines, Llamacpp, XGrammar, OpenAI, Gemini) across efficiency, coverage, and quality.
+- **Key findings:** (1) Constrained decoding speeds up generation by 50% vs unconstrained. (2) Frameworks vary significantly — best supports 2x the schemas of worst. (3) Constrained decoding consistently improves downstream task accuracy up to 4%. JSON Schema has become the industry standard for specifying output constraints.
+- **Relevance to project:** Directly relevant to [[wiki/requirements/part5-llm-skill-id|Part 5]]. For Gemini integration, we should use `response_schema` (Gemini's native structured output, added May 2024) rather than relying on prompt-only instructions for JSON output. This guarantees schema compliance and avoids parsing failures from malformed text output.
+
+### Paper 08: Draft-Conditioned Constrained Decoding (DCCD)
+- **Source:** `[[raw/papers/08-draft-conditioned-constrained-decoding.pdf]]`
+- **Authors:** Reddy, Walker, Ide, Bedi (2026)
+- **Venue:** arXiv:2603.03305 (UCF + Lockheed Martin)
+- **Summary:** Proposes DCCD, a two-step approach: (1) generate unconstrained draft capturing semantic intent, then (2) apply constrained decoding conditioned on the draft. Addresses the "projection tax" — where standard constrained decoding distorts semantics by masking tokens and renormalizing probabilities.
+- **Key findings:** Standard constrained decoding can reduce semantic accuracy by 10-30%. DCCD improves strict structured accuracy by up to +24 percentage points. A 1B model with DCCD can match a 14B model with standard constrained decoding. Key insight: constraining early (token-by-token) forces the model toward locally valid but semantically incorrect paths.
+- **Relevance to project:** Explains *why* our Gemini prompt sometimes might return unexpected skill classifications even with structured output. The "projection tax" means the LLM's reasoning quality degrades under hard JSON constraints. For our simple use case (returning `["Frontend"]` or `["Backend"]` or both), this effect is minimal — but worth understanding if classification accuracy is unexpectedly low.
+
+## Pillar 5: React Architecture (Gap Fill)
+
+### Paper 09: React's Architectural Limitations in Distributed UI Systems
+- **Source:** `[[raw/papers/09-react-state-management-large-scale.pdf]]`
+- **Authors:** Guduru (2025)
+- **Venue:** JISEM, Vol. 10(61s)
+- **Summary:** Critical analysis of React's architectural assumptions when applied to distributed/micro-frontend systems. Identifies tensions between React's unified runtime model (single Virtual DOM tree, shared context, synchronized rendering) and distributed deployment requirements.
+- **Key findings:** React's composition model builds deeply nested component trees where parent components control children's props and lifecycle. The Context API solves prop-drilling elegantly in monolithic apps but breaks at micro-frontend boundaries. Unidirectional data flow (props down, callbacks up) is React's core strength for predictable state management. State management approaches for distributed systems: Backend-mediated state, client-side event bus, federated Redux/MobX stores.
+- **Relevance to project:** Validates our architectural choice of a single React SPA (not micro-frontends) for this project. The recursive `<TaskFormNode />` component leverages React's strength — deep component trees with props-down, callbacks-up state flow via the `onNodeUpdate` pattern. The paper confirms that React's monolithic model is optimal for our use case (single cohesive app). Also validates using plain `useState` + pure function tree updater over heavier state management (Redux/Zustand) since our tree depth and complexity don't warrant it.
+
+### Paper 10: SLOT — Structuring the Output of Large Language Models
+- **Source:** `[[raw/papers/10-slot-structuring-llm-output.pdf]]`
+- **Authors:** Wang, Shen, Mishra, Xu, Teng, Ding (2025)
+- **Venue:** EMNLP 2025 Industry Track (Amazon Web Services)
+- **Summary:** Introduces SLOT (Structured LLM Output Transformer), a model-agnostic post-processing approach. Instead of constraining during generation, SLOT fine-tunes a lightweight model to convert unstructured LLM text output into valid JSON matching a target schema. Achieves 99.5% schema accuracy and 94.0% content similarity with fine-tuned Mistral-7B.
+- **Key findings:** SLOT outperforms Claude-3.5-Sonnet by +25% on schema accuracy. Even compact models (Llama-3.2-1B) can match larger proprietary models when equipped with SLOT. Decouples formatting from reasoning — the main LLM focuses on content, the post-processor handles structure. SlotBench benchmark includes 176K training examples across diverse schemas.
+- **Relevance to project:** For our MVP, Gemini's native `response_schema` is sufficient (we only need a simple `["Frontend", "Backend"]` array). But SLOT's insight — that decoupling reasoning from formatting improves both — is relevant if we extend the Cognitive Context to more complex outputs (e.g., multi-field skill profiles with proficiency levels). Also strengthens the README's "Future Target State" section.

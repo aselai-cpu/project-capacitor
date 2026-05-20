@@ -55,3 +55,15 @@ Pages created:
 
 Pages updated:
 - [[wiki/index]] — added research papers note
+
+## [2026-05-21] ingest | Gap-fill research papers (4 new PDFs)
+
+Sources: `[[raw/papers/07-structured-output-benchmark.pdf]]`, `[[raw/papers/08-draft-conditioned-constrained-decoding.pdf]]`, `[[raw/papers/09-react-state-management-large-scale.pdf]]`, `[[raw/papers/10-slot-structuring-llm-output.pdf]]`
+
+Added 2 new pillars to research coverage:
+- Pillar 4 (Structured LLM Output): JSONSchemaBench benchmark (EPFL/Microsoft); DCCD two-step approach (UCF/Lockheed); SLOT post-processing framework (AWS/EMNLP 2025)
+- Pillar 5 (React Architecture): Critical analysis of React's monolithic assumptions vs distributed UI — validates our SPA approach
+
+Pages updated:
+- [[wiki/notes/research-papers]] — added papers 07-10 with summaries and project relevance
+- [[wiki/index]] — updated paper count (7 → 11, 3 → 5 pillars)

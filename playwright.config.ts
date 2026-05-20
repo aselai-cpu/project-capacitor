@@ -16,6 +16,13 @@ export default defineConfig({
       reuseExistingServer: true,
       env: {
         DATABASE_URL: 'postgresql://user:password@localhost:5433/capacitor',
+        // Pass through whichever LLM key is set in the environment
+        ...(process.env.GOOGLE_GENERATIVE_AI_API_KEY && { GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY }),
+        ...(process.env.OPENAI_API_KEY && { OPENAI_API_KEY: process.env.OPENAI_API_KEY }),
+        ...(process.env.ANTHROPIC_API_KEY && { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }),
+        ...(process.env.MOONSHOT_API_KEY && { MOONSHOT_API_KEY: process.env.MOONSHOT_API_KEY }),
+        ...(process.env.LLM_PROVIDER && { LLM_PROVIDER: process.env.LLM_PROVIDER }),
+        ...(process.env.LLM_MODEL && { LLM_MODEL: process.env.LLM_MODEL }),
       },
     },
     {

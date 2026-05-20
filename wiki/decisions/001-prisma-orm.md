@@ -19,7 +19,7 @@ Use **Prisma** with schema-first approach and explicit join tables for many-to-m
 - `TaskStatus` enum mapping "To-do" → `TODO`, "Done" → `DONE`
 - UUID primary keys on all entities
 - Self-referencing `Task` via `parentId` with `ON DELETE CASCADE`
-- `@google/genai` SDK for Gemini LLM integration
+- ~~`@google/genai` SDK for Gemini LLM integration~~ → Superseded by [[wiki/decisions/004-vercel-ai-sdk|ADR-004]]: multi-provider Vercel AI SDK
 
 ## Consequences
 

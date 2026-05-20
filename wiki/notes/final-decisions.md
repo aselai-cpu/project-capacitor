@@ -91,10 +91,11 @@ results.forEach((result, i) => {
 Save task with empty skills. No `skillSource` enum — keep schema simple. Empty skills cell is self-explanatory.
 
 ### Provider
-- Vercel AI SDK (`ai`) with `@ai-sdk/google` only — single adapter
-- Model: `gemini-2.5-flash`
+- Vercel AI SDK (`ai`) with 4 provider adapters — auto-detects from API key
+- Supported: Google Gemini (default), OpenAI, Anthropic, Moonshot Kimi
 - `generateObject()` with Zod schema for type-safe structured output
-- No multi-provider support unless time permits
+- Set one API key in `.env` — app auto-detects which provider to use
+- `LLM_PROVIDER` and `LLM_MODEL` env vars for explicit overrides
 
 ---
 

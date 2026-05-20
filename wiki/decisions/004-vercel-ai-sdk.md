@@ -22,9 +22,10 @@ Use the **Vercel AI SDK** (`ai` npm package) as the LLM abstraction layer, with 
 
 ### Package structure
 - `ai` — core SDK with `generateText()`, `generateObject()`, `streamText()`
-- `@ai-sdk/google` — Gemini provider adapter (default)
-- `@ai-sdk/openai` — OpenAI provider adapter (fallback)
-- `@ai-sdk/anthropic` — Anthropic provider adapter (optional)
+- `@ai-sdk/google` — Google Gemini adapter (default)
+- `@ai-sdk/openai` — OpenAI adapter
+- `@ai-sdk/anthropic` — Anthropic Claude adapter
+- `@ai-sdk/moonshotai` — Moonshot Kimi adapter
 
 ### Structured output via Zod
 Instead of prompting for raw JSON text and parsing it (fragile), use `generateObject()` with a Zod schema:
@@ -49,18 +50,17 @@ This approach:
 - Returns TypeScript-typed output (no manual parsing)
 - Falls back to prompt-based JSON extraction + validation for providers without native structured output
 
-### Provider switching
-Controlled via environment variable:
+### Provider auto-detection
+The app auto-detects which provider to use based on which API key is set in the environment. Priority: explicit `LLM_PROVIDER` > first matching key (OpenAI → Anthropic → Moonshot → Google).
 
-```typescript
-function getModel() {
-  switch (process.env.LLM_PROVIDER) {
-    case 'openai': return openai('gpt-4o-mini');
-    case 'anthropic': return anthropic('claude-haiku-4-5-20251001');
-    default: return google('gemini-2.5-flash');
-  }
-}
-```
+| Env var | Provider | Default model |
+|---------|----------|---------------|
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini | gemini-2.5-flash |
+| `OPENAI_API_KEY` | OpenAI | gpt-4o-mini |
+| `ANTHROPIC_API_KEY` | Anthropic | claude-haiku-4-5-20251001 |
+| `MOONSHOT_API_KEY` | Moonshot Kimi | kimi-k2.5 |
+
+Override with `LLM_PROVIDER` (force provider) and `LLM_MODEL` (force model).
 
 ## Consequences
 
@@ -68,6 +68,7 @@ function getModel() {
 - **Positive:** `generateObject()` with Zod eliminates JSON parsing bugs (validates Paper 07's recommendation to use native structured output)
 - **Positive:** TypeScript-native with full type safety — no `any` types for LLM responses
 - **Positive:** Well-recognized in the ecosystem — strengthens README library justification
-- **Trade-off:** Additional dependency (`ai` + provider adapter) vs single `@google/genai` package
+- **Positive:** Auto-detects provider from API key — users just set one env var and it works
+- **Trade-off:** 4 provider adapters installed (~additional bundle size) vs single `@google/genai` package
 - **Trade-off:** Slight abstraction overhead, but negligible for our single-call-per-task-creation use case
 - **Supersedes:** The `@google/genai` approach from [[wiki/notes/gemini-design-discussion]] — same Gemini model, but accessed through the AI SDK adapter instead of directly

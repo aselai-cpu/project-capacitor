@@ -14,7 +14,7 @@ Full-stack Task Assignment application for the xDigital AI Products Team at HTX.
 | Database | PostgreSQL 15 + Prisma ORM (implicit M:N) | ADR-001 |
 | Backend | Express.js + TypeScript + Zod validation | ADR-006 |
 | Frontend | Vite + React 19 + React Router v7 + Tailwind CSS | ADR-005 |
-| LLM | Vercel AI SDK + `@ai-sdk/google` (Gemini 2.5 Flash) | ADR-004 |
+| LLM | Vercel AI SDK (Google/OpenAI/Anthropic/Moonshot — auto-detected) | ADR-004 |
 | Infrastructure | Docker + docker-compose (single-stage builds) | ADR-003 |
 | API Design | REST, recursive JSON payload for tree creation | ADR-002 |
 

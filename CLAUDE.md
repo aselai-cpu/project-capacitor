@@ -6,12 +6,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Project Capacitor is an enterprise-grade, full-stack Task Assignment application.
 
-## Repository Status
+## Commands
 
-This project is in early stages. Update this file as the codebase evolves with:
-- Build, test, and lint commands
-- Architecture and key design decisions
-- Development workflow and conventions
+```bash
+# Backend
+cd backend && npm run dev          # Start dev server (port 5000)
+cd backend && npm run build        # TypeScript compile
+cd backend && npm test             # Run unit tests (64 tests)
+cd backend && npm run test:coverage # Tests with coverage report
+
+# Frontend
+cd frontend && npm run dev         # Start dev server (port 5173)
+cd frontend && npm run build       # TypeScript + Vite build
+cd frontend && npm test            # Run unit tests (39 tests)
+
+# E2E tests (requires backend + frontend running)
+npx playwright test                # 8 E2E tests
+
+# Docker (full stack)
+docker-compose up --build          # Start all services
+```
+
+## LLM Configuration
+
+The app supports 4 LLM providers via Vercel AI SDK — auto-detected from API key in `.env`:
+
+| Env var | Provider | Default model |
+|---------|----------|---------------|
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini | gemini-2.5-flash |
+| `OPENAI_API_KEY` | OpenAI | gpt-4o-mini |
+| `ANTHROPIC_API_KEY` | Anthropic | claude-haiku-4-5-20251001 |
+| `MOONSHOT_API_KEY` | Moonshot Kimi | kimi-k2.5 |
+
+Set ONE key — auto-detected. Override with `LLM_PROVIDER` and `LLM_MODEL` env vars. No key = fail-open (tasks created without skills).
 
 ## Git Workflow
 

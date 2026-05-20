@@ -122,19 +122,16 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Upsert skills (idempotent)
-  const frontend = await prisma.skill.upsert({
-    where: { name: 'Frontend' },
-    update: {},
-    create: { name: 'Frontend' },
-  });
-  const backend = await prisma.skill.upsert({
-    where: { name: 'Backend' },
-    update: {},
-    create: { name: 'Backend' },
-  });
+  // Clear existing data for idempotent re-runs (Docker restarts)
+  await prisma.task.deleteMany();
+  await prisma.developer.deleteMany();
+  await prisma.skill.deleteMany();
 
-  // Seed developers with skills
+  // Create skills
+  const frontend = await prisma.skill.create({ data: { name: 'Frontend' } });
+  const backend = await prisma.skill.create({ data: { name: 'Backend' } });
+
+  // Create developers with skills
   const devs = [
     { name: 'Alice', skills: [frontend.id] },
     { name: 'Bob', skills: [backend.id] },
@@ -143,10 +140,8 @@ async function main() {
   ];
 
   for (const dev of devs) {
-    await prisma.developer.upsert({
-      where: { id: dev.name.toLowerCase() }, // won't match UUID, creates new
-      update: {},
-      create: {
+    await prisma.developer.create({
+      data: {
         name: dev.name,
         skills: { connect: dev.skills.map(id => ({ id })) },
       },
@@ -161,14 +156,7 @@ main()
   .finally(() => prisma.$disconnect());
 ```
 
-Note: Upsert on developer won't match by UUID on restarts. Use `connectOrCreate` pattern or delete-then-create for true idempotency:
-
-```typescript
-// Alternative idempotent approach:
-await prisma.developer.deleteMany();
-await prisma.skill.deleteMany();
-// Then create fresh
-```
+Note: Uses delete-then-create for idempotency. Safe because seed only runs on startup and tasks created during evaluation are expected to be ephemeral.
 
 - [ ] **Step 2: Add prisma seed config to package.json**
 
@@ -211,7 +199,7 @@ import cors from 'cors';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:5173'] }));
 app.use(express.json());
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
@@ -465,24 +453,29 @@ function buildTree(task: any, allTasks: any[]): any {
 export async function createTask(input: CreateTaskInput) {
   const prismaData = toPrismaCreate(input);
 
-  const created = await prisma.task.create({
-    data: prismaData as any,
-    include: taskInclude,
+  // Atomic transaction — entire tree succeeds or fails together
+  const created = await prisma.$transaction(async (tx) => {
+    return tx.task.create({
+      data: prismaData as any,
+      include: taskInclude,
+    });
   });
 
   // Re-fetch as tree for response
   return getTaskById(created.id);
 }
 
-function toPrismaCreate(node: CreateTaskInput): any {
+function toPrismaCreate(node: CreateTaskInput, isRoot = true): any {
   return {
     title: node.title,
-    parentId: node.parentId,
+    // Only set parentId on the root node (for "Add Subtask" from List page).
+    // For nested children, Prisma auto-wires parentId via subtasks: { create: [...] }.
+    ...(isRoot && node.parentId ? { parent: { connect: { id: node.parentId } } } : {}),
     skills: node.skillIds.length > 0
       ? { connect: node.skillIds.map(id => ({ id })) }
       : undefined,
     subtasks: node.subtasks.length > 0
-      ? { create: node.subtasks.map(child => toPrismaCreate(child)) }
+      ? { create: node.subtasks.map(child => toPrismaCreate(child, false)) }
       : undefined,
   };
 }
@@ -702,6 +695,8 @@ export interface TaskFormState {
 
 ```typescript
 // frontend/src/lib/api.ts
+import { Task, Developer, Skill } from './types';
+
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const fetchTasks = (): Promise<Task[]> =>
@@ -726,8 +721,6 @@ export const updateTask = (id: string, body: any): Promise<any> =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }).then(r => r.json());
-
-import { Task, Developer, Skill } from './types';
 ```
 
 - [ ] **Step 4: Set up React Router in App.tsx**
@@ -1072,42 +1065,80 @@ cd backend && npm install ai @ai-sdk/google
 
 - [ ] **Step 2: Write LLM service**
 
-Copy `classifySkills()` from spec lines 407-428 into `backend/src/services/llmService.ts`.
+```typescript
+// backend/src/services/llmService.ts
+import { generateObject } from 'ai';
+import { google } from '@ai-sdk/google';
+import { z } from 'zod';
 
-- [ ] **Step 3: Add enrichment to taskService.createTask()**
+const skillSchema = z.object({
+  skills: z.array(z.enum(['Frontend', 'Backend']))
+});
 
-Before `toPrismaCreate()`, add:
+export async function classifySkills(title: string): Promise<string[]> {
+  try {
+    const { object } = await generateObject({
+      model: google('gemini-2.5-flash'),
+      schema: skillSchema,
+      prompt: `You are a task classifier. Given this software task description, identify which technical skills it requires. Only classify as "Frontend" (UI, CSS, components, pages) or "Backend" (APIs, databases, servers, security) or both.\n\nTask: "${title}"`,
+    });
+    return object.skills;
+  } catch {
+    return []; // fail-open
+  }
+}
+```
 
+- [ ] **Step 3: Replace `createTask()` in taskService.ts with LLM-enriched version**
+
+Replace the existing `createTask` function in `backend/src/services/taskService.ts` with this version that adds LLM enrichment before the Prisma write. Add the import at the top of the file.
+
+Add at top of file:
 ```typescript
 import { classifySkills } from './llmService';
+```
 
-// In createTask():
-// 1. Get skill name→id map
-const skills = await prisma.skill.findMany();
-const skillMap = new Map(skills.map(s => [s.name, s.id]));
+Replace `createTask`:
+```typescript
+export async function createTask(input: CreateTaskInput) {
+  // --- LLM enrichment ---
+  const skills = await prisma.skill.findMany();
+  const skillMap = new Map(skills.map(s => [s.name, s.id]));
 
-// 2. Collect nodes needing classification
-const needsSkills: CreateTaskInput[] = [];
-function collectEmpty(node: CreateTaskInput) {
-  if (node.skillIds.length === 0) needsSkills.push(node);
-  node.subtasks.forEach(collectEmpty);
-}
-collectEmpty(input);
+  const needsSkills: CreateTaskInput[] = [];
+  function collectEmpty(node: CreateTaskInput) {
+    if (node.skillIds.length === 0) needsSkills.push(node);
+    node.subtasks.forEach(collectEmpty);
+  }
+  collectEmpty(input);
 
-// 3. Classify in parallel with timeout
-if (needsSkills.length > 0) {
-  try {
-    const timeout = new Promise<never>((_, rej) => setTimeout(() => rej('timeout'), 5000));
-    const results = await Promise.race([
-      Promise.allSettled(needsSkills.map(n => classifySkills(n.title))),
-      timeout,
-    ]);
-    (results as PromiseSettledResult<string[]>[]).forEach((r, i) => {
-      if (r.status === 'fulfilled') {
-        needsSkills[i].skillIds = r.value.map(name => skillMap.get(name)).filter(Boolean) as string[];
-      }
+  if (needsSkills.length > 0) {
+    try {
+      const timeout = new Promise<never>((_, rej) => setTimeout(() => rej('timeout'), 5000));
+      const results = await Promise.race([
+        Promise.allSettled(needsSkills.map(n => classifySkills(n.title))),
+        timeout,
+      ]);
+      (results as PromiseSettledResult<string[]>[]).forEach((r, i) => {
+        if (r.status === 'fulfilled') {
+          needsSkills[i].skillIds = r.value
+            .map(name => skillMap.get(name))
+            .filter(Boolean) as string[];
+        }
+      });
+    } catch { /* timeout — fail-open */ }
+  }
+
+  // --- Prisma write (atomic) ---
+  const prismaData = toPrismaCreate(input);
+  const created = await prisma.$transaction(async (tx) => {
+    return tx.task.create({
+      data: prismaData as any,
+      include: taskInclude,
     });
-  } catch { /* timeout — fail-open */ }
+  });
+
+  return getTaskById(created.id);
 }
 ```
 

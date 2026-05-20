@@ -16,7 +16,7 @@ A persistent, LLM-maintained wiki for Project Capacitor that accumulates project
 ## Directory Structure
 
 ```
-raw/                                  # Immutable source documents
+raw/                                  # Immutable source documents (moved here during setup)
   └── Software Engineering Take Home Test v2.0.pdf
 
 wiki/
@@ -38,16 +38,105 @@ wiki/
   └── notes/                          # Implementation findings, gotchas, research
 ```
 
+## Ground Rules
+
+1. **Never modify files in `raw/`** — sources are immutable
+2. **Always read `wiki/index.md` first** when answering project questions
+3. **Every new page must be added to `wiki/index.md`**
+4. **Every action must be logged in `wiki/log.md`**
+5. **Prefer updating existing pages over creating new ones** — avoid duplication
+
 ## Schema (Wiki Operating Rules)
 
 ### Page Conventions
 
+- All wiki pages include YAML frontmatter: `type` (entity/requirement/decision/note), `title`, `created`, `updated`
 - All wiki pages use `[[wikilink]]` syntax for cross-references
-- Entity pages describe properties, relationships, business rules, and seed data
-- Requirement pages map 1:1 to spec parts — include acceptance criteria
-- Decision pages use ADR format: context, decision, consequences
-- Note pages are freeform — implementation findings, gotchas, research
-- `log.md` entries prefixed with `## [YYYY-MM-DD] verb | subject` for parseability
+- `index.md` entries: `- [[wiki/category/filename]] -- one-line description`, grouped by section (Entities | Requirements | Decisions | Notes)
+- `log.md` entries prefixed with `## [YYYY-MM-DD] verb | subject` — verbs: `init` | `ingest` | `decision` | `query` | `lint` | `update`
+
+### Page Templates
+
+**Entity page:**
+```markdown
+---
+type: entity
+title: Entity Name
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+---
+# Entity Name
+
+## Properties
+- ...
+
+## Relationships
+- ...
+
+## Business Rules
+- ...
+
+## Seed Data
+| Column | Value |
+|--------|-------|
+```
+
+**Requirement page:**
+```markdown
+---
+type: requirement
+title: Part N — Title
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+source: "[[raw/source-name]]"
+---
+# Part N: Title
+
+## Overview
+...
+
+## Operations / Features
+- ...
+
+## Constraints
+- ...
+
+## Acceptance Criteria
+- [ ] ...
+```
+
+**Decision page (ADR):**
+```markdown
+---
+type: decision
+title: NNN — Decision Title
+created: YYYY-MM-DD
+status: accepted | superseded | deprecated
+---
+# ADR-NNN: Decision Title
+
+## Context
+What is the issue or situation?
+
+## Decision
+What was decided?
+
+## Consequences
+What are the trade-offs?
+```
+
+**Note page:**
+```markdown
+---
+type: note
+title: Note Title
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+---
+# Note Title
+
+Freeform content — implementation findings, gotchas, research.
+```
 
 ### Workflows
 
@@ -55,13 +144,21 @@ wiki/
 1. Read the source document
 2. Write/update relevant wiki pages (entities, requirements, notes)
 3. Update `wiki/index.md` with any new pages
-4. Append an entry to `wiki/log.md`
+4. Update `wiki/overview.md` if the source materially changes the project understanding
+5. Append an entry to `wiki/log.md`
 
 **Query** — when asked a question about the project:
 1. Read `wiki/index.md` to find relevant pages
 2. Read those pages
 3. Synthesize answer with `[[page]]` citations
 4. If the answer is valuable, offer to file it as a new wiki page
+
+**Record Decision** — when an architectural or implementation decision is made:
+1. Determine next ADR number from `wiki/decisions/`
+2. Write `wiki/decisions/NNN-kebab-title.md` using the ADR template
+3. Cross-link from relevant entity/requirement pages
+4. Update `wiki/index.md`
+5. Append an entry to `wiki/log.md`
 
 **Lint** — periodic health check:
 1. Scan for orphan pages (not in index), missing cross-links, stale content
@@ -79,11 +176,15 @@ On first ingest of the PDF, the wiki is populated with:
 
 ## CLAUDE.md Integration
 
-A `## Project Wiki` section will be added to CLAUDE.md containing:
-- Wiki location and purpose
+A `## Project Wiki` section will be added to CLAUDE.md, coexisting with the existing `## Documentation` section:
+- `docs/` (Diataxis) is for human-authored documentation — tutorials, how-to guides, reference, concepts
+- `wiki/` is for LLM-maintained project knowledge — entity breakdowns, requirement analysis, decisions, findings
+
+The CLAUDE.md section will contain:
+- Wiki location (`wiki/`) and its purpose
 - Instructions to read `wiki/index.md` before answering project questions
-- The three workflows (ingest, query, lint) as slash-command-style operations
-- Page conventions (wikilinks, ADR format, log format)
+- The four workflows (ingest, query, record decision, lint)
+- Ground rules and page conventions
 
 ## Trade-offs
 

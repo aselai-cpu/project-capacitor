@@ -1,7 +1,28 @@
 import type { CreateTaskInput } from '../types.js';
 
-export function computeFlatListWithDepth(tasks: any[]) {
-  const childrenMap = new Map<string | null, any[]>();
+// Type for tasks returned by findMany with taskInclude
+export interface TaskWithRelations {
+  id: string;
+  title: string;
+  status: string;
+  parentId: string | null;
+  developerId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  skills: { id: string; name: string }[];
+  developer: { id: string; name: string } | null;
+}
+
+export interface TaskWithDepth extends TaskWithRelations {
+  depth: number;
+}
+
+export interface TaskTree extends TaskWithRelations {
+  subtasks: TaskTree[];
+}
+
+export function computeFlatListWithDepth(tasks: TaskWithRelations[]): TaskWithDepth[] {
+  const childrenMap = new Map<string | null, TaskWithRelations[]>();
   for (const task of tasks) {
     const key = task.parentId ?? null;
     if (!childrenMap.has(key)) childrenMap.set(key, []);
@@ -9,9 +30,9 @@ export function computeFlatListWithDepth(tasks: any[]) {
   }
   // Sort siblings by createdAt
   for (const children of childrenMap.values()) {
-    children.sort((a: any, b: any) => a.createdAt.getTime() - b.createdAt.getTime());
+    children.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
-  const result: any[] = [];
+  const result: TaskWithDepth[] = [];
   function walk(parentId: string | null, depth: number) {
     for (const child of childrenMap.get(parentId) ?? []) {
       result.push({ ...child, depth });
@@ -22,7 +43,7 @@ export function computeFlatListWithDepth(tasks: any[]) {
   return result;
 }
 
-export function buildTree(task: any, allTasks: any[]): any {
+export function buildTree(task: TaskWithRelations, allTasks: TaskWithRelations[]): TaskTree {
   const children = allTasks.filter(t => t.parentId === task.id);
   return {
     ...task,

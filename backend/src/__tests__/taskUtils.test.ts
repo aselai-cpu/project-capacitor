@@ -13,7 +13,12 @@ function makeTask(overrides: Record<string, unknown>) {
     id: 'id-1',
     parentId: null,
     title: 'Task',
+    status: 'TODO',
+    developerId: null,
     createdAt: new Date('2024-01-01T00:00:00Z'),
+    updatedAt: new Date('2024-01-01T00:00:00Z'),
+    skills: [],
+    developer: null,
     ...overrides,
   };
 }
@@ -40,8 +45,8 @@ describe('computeFlatListWithDepth', () => {
     const tasks = [makeTask({ id: 'root', parentId: null })];
     const result = computeFlatListWithDepth(tasks);
     expect(result).toHaveLength(1);
-    expect(result[0].depth).toBe(0);
-    expect(result[0].id).toBe('root');
+    expect(result[0]!.depth).toBe(0);
+    expect(result[0]!.id).toBe('root');
   });
 
   it('root with one child: root depth 0, child depth 1', () => {
@@ -51,8 +56,8 @@ describe('computeFlatListWithDepth', () => {
     ];
     const result = computeFlatListWithDepth(tasks);
     expect(result).toHaveLength(2);
-    expect(result[0]).toMatchObject({ id: 'root', depth: 0 });
-    expect(result[1]).toMatchObject({ id: 'child', depth: 1 });
+    expect(result[0]!).toMatchObject({ id: 'root', depth: 0 });
+    expect(result[1]!).toMatchObject({ id: 'child', depth: 1 });
   });
 
   it('three levels deep: depths 0, 1, 2', () => {
@@ -63,9 +68,9 @@ describe('computeFlatListWithDepth', () => {
     ];
     const result = computeFlatListWithDepth(tasks);
     expect(result).toHaveLength(3);
-    expect(result[0]).toMatchObject({ id: 'root', depth: 0 });
-    expect(result[1]).toMatchObject({ id: 'child', depth: 1 });
-    expect(result[2]).toMatchObject({ id: 'grandchild', depth: 2 });
+    expect(result[0]!).toMatchObject({ id: 'root', depth: 0 });
+    expect(result[1]!).toMatchObject({ id: 'child', depth: 1 });
+    expect(result[2]!).toMatchObject({ id: 'grandchild', depth: 2 });
   });
 
   it('multiple roots sorted by createdAt', () => {
@@ -74,8 +79,8 @@ describe('computeFlatListWithDepth', () => {
       makeTask({ id: 'root-a', parentId: null, createdAt: new Date('2024-01-01') }),
     ];
     const result = computeFlatListWithDepth(tasks);
-    expect(result[0].id).toBe('root-a');
-    expect(result[1].id).toBe('root-b');
+    expect(result[0]!.id).toBe('root-a');
+    expect(result[1]!.id).toBe('root-b');
   });
 
   it('siblings sorted by createdAt', () => {
@@ -85,8 +90,8 @@ describe('computeFlatListWithDepth', () => {
       makeTask({ id: 'sib-a', parentId: 'root', createdAt: new Date('2024-01-02') }),
     ];
     const result = computeFlatListWithDepth(tasks);
-    expect(result[1].id).toBe('sib-a');
-    expect(result[2].id).toBe('sib-b');
+    expect(result[1]!.id).toBe('sib-a');
+    expect(result[2]!.id).toBe('sib-b');
   });
 });
 
@@ -106,7 +111,7 @@ describe('buildTree', () => {
     const child = makeTask({ id: 'child', parentId: 'root' });
     const result = buildTree(root, [root, child]);
     expect(result.subtasks).toHaveLength(1);
-    expect(result.subtasks[0].id).toBe('child');
+    expect(result.subtasks[0]!.id).toBe('child');
   });
 
   it('three-level deep nesting works recursively', () => {
@@ -114,7 +119,7 @@ describe('buildTree', () => {
     const child = makeTask({ id: 'child', parentId: 'root' });
     const grandchild = makeTask({ id: 'grandchild', parentId: 'child' });
     const result = buildTree(root, [root, child, grandchild]);
-    expect(result.subtasks[0].subtasks[0].id).toBe('grandchild');
+    expect(result.subtasks[0]!.subtasks[0]!.id).toBe('grandchild');
   });
 });
 

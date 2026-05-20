@@ -16,6 +16,12 @@ app.use('/api/skills', skillsRouter);
 app.use('/api/developers', developersRouter);
 app.use('/api/tasks', tasksRouter);
 
+// Global error handler (must be after all routes)
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
 
 export default app;

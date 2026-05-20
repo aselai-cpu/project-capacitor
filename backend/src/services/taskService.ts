@@ -4,6 +4,7 @@ import type { CreateTaskInput } from '../types.js';
 import { TaskStatus } from '@prisma/client';
 import { classifySkills } from './llmService.js';
 import { computeFlatListWithDepth, buildTree, toPrismaCreate, collectNodesWithoutSkills } from './taskUtils.js';
+import type { TaskWithRelations } from './taskUtils.js';
 
 const taskInclude = {
   skills: { select: { id: true, name: true } },
@@ -47,7 +48,9 @@ export async function createTask(input: CreateTaskInput) {
             .filter(Boolean) as string[];
         }
       });
-    } catch { /* timeout — fail-open */ }
+    } catch (err) {
+      console.warn('LLM skill classification timed out or failed:', err);
+    }
   }
 
   // --- Prisma write (atomic) ---
@@ -111,7 +114,7 @@ export async function updateTask(id: string, data: { status?: string; developerI
     }
   }
 
-  const updateData: any = {};
+  const updateData: { status?: TaskStatus; developerId?: string | null } = {};
   if (data.status) updateData.status = data.status as TaskStatus;
   if (data.developerId !== undefined) updateData.developerId = data.developerId;
 

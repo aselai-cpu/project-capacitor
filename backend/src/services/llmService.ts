@@ -15,7 +15,8 @@ export async function classifySkills(title: string): Promise<string[]> {
       prompt: `You are a task classifier. Given this software task description, identify which technical skills it requires. Only classify as "Frontend" (UI, CSS, components, pages) or "Backend" (APIs, databases, servers, security) or both.\n\nTask: "${title}"`,
     });
     return object.skills;
-  } catch {
-    return []; // fail-open
+  } catch (err) {
+    console.warn('LLM classify error for title:', title, err);
+    return [];
   }
 }

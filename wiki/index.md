@@ -24,8 +24,11 @@ Content catalog for Project Capacitor wiki. Read this first.
 
 ## Decisions
 
-(none yet)
+- [[wiki/decisions/001-prisma-orm]] -- ADR-001: Prisma ORM with explicit join tables, UUID keys, schema-first
+- [[wiki/decisions/002-recursive-task-payload]] -- ADR-002: Single recursive JSON payload for atomic task tree creation
+- [[wiki/decisions/003-docker-multi-stage]] -- ADR-003: Multi-stage Docker builds, Nginx frontend, healthcheck orchestration
 
 ## Notes
 
 - [[wiki/notes/meta-constraints]] -- Important notes: assumptions, AI usage, timeline, sample task data from wireframes
+- [[wiki/notes/gemini-design-discussion]] -- DDD/TOGAF exploration: bounded contexts, invariants, implementation patterns, API contracts

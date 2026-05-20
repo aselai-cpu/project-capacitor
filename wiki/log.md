@@ -25,3 +25,18 @@ Gaps found on second pass:
 - "Important Notes" section (meta-constraints, assumptions, AI usage, timeline, sample tasks) was not captured — created [[wiki/notes/meta-constraints]]
 - Updated [[wiki/overview]] to wikilink Part 7
 - Updated [[wiki/index]] with new pages
+
+## [2026-05-20] ingest | Discussion with gemini about the Project.md
+
+Source: `[[raw/notes/Discussion with gemini about the Project.md]]`
+
+29-message Gemini conversation exploring the project through DDD and TOGAF lenses. Covers database schema design, API contracts, implementation patterns (Prisma, recursive payloads, LLM integration, recursive React components), and Docker containerization strategy.
+
+Pages created:
+- [[wiki/notes/gemini-design-discussion]] — comprehensive summary of DDD framing, bounded contexts, implementation patterns
+- [[wiki/decisions/001-prisma-orm]] — ADR: Prisma ORM with explicit join tables
+- [[wiki/decisions/002-recursive-task-payload]] — ADR: recursive JSON payload for atomic tree creation
+- [[wiki/decisions/003-docker-multi-stage]] — ADR: multi-stage Docker builds with Nginx
+
+Pages updated:
+- [[wiki/index]] — added decisions and notes entries

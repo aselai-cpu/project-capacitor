@@ -65,9 +65,11 @@ describe('TaskListPage', () => {
     vi.mocked(fetchTasks).mockResolvedValue([]);
     vi.mocked(fetchDevelopers).mockResolvedValue([]);
     render(<MemoryRouter><TaskListPage /></MemoryRouter>);
-    expect(screen.getByText('Task Title')).toBeInTheDocument();
-    expect(screen.getByText('Skills')).toBeInTheDocument();
-    expect(screen.getByText('Status')).toBeInTheDocument();
-    expect(screen.getByText('Assignee')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Task Title')).toBeInTheDocument();
+      expect(screen.getByText('Skills')).toBeInTheDocument();
+      expect(screen.getByText('Status')).toBeInTheDocument();
+      expect(screen.getByText('Assignee')).toBeInTheDocument();
+    });
   });
 });

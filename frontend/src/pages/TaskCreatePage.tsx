@@ -11,10 +11,16 @@ export default function TaskCreatePage() {
   const parentId = searchParams.get('parentId');
 
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(true);
   const [rootTask, setRootTask] = useState<TaskFormState>(createEmptyNode());
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchSkills().then(setSkills); }, []);
+  useEffect(() => {
+    fetchSkills()
+      .then(setSkills)
+      .catch(() => {}) // fail silently — form still works without skill buttons
+      .finally(() => setSkillsLoading(false));
+  }, []);
 
   const handleUpdate = (targetId: string, updater: (n: TaskFormState) => Partial<TaskFormState>) => {
     setRootTask(prev => updateNodeInTree(prev, targetId, updater));
@@ -43,6 +49,7 @@ export default function TaskCreatePage() {
       <h1 className="text-2xl font-bold mb-6">
         {parentId ? 'Add Subtask' : 'Create Task'}
       </h1>
+      {skillsLoading && <p className="text-gray-400 text-sm mb-2">Loading skills...</p>}
       <form onSubmit={handleSubmit}>
         <TaskFormNode node={rootTask} skills={skills} depth={0} onUpdate={handleUpdate} />
         <div className="flex justify-end mt-4 pt-4 border-t">

@@ -1,4 +1,5 @@
 import type { TaskFormState, Skill } from '../lib/types';
+import { createEmptyNode } from '../utils/treeUtils';
 
 interface Props {
   node: TaskFormState;
@@ -39,7 +40,7 @@ export default function TaskFormNode({ node, skills, depth, onUpdate }: Props) {
         <button
           type="button"
           onClick={() => onUpdate(node.id, n => ({
-            subtasks: [...n.subtasks, { id: crypto.randomUUID(), title: '', skillIds: [], subtasks: [] }],
+            subtasks: [...n.subtasks, createEmptyNode()],
           }))}
           className="text-xs bg-gray-800 text-white px-2 py-1 rounded"
         >

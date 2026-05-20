@@ -2,3 +2,11 @@ node_modules/
 dist/
 .env
 *.log
+
+# Playwright
+.playwright-mcp/
+test-results/
+
+# IDE/Editor
+.claude/
+.obsidian/

@@ -26,7 +26,7 @@ The README must document:
 
 ## Constraints
 
-- Repository must be publicly accessible
+- The repository must be publicly accessible
 - All necessary information for running the app must be included (API keys, etc.)
 
 ## Acceptance Criteria

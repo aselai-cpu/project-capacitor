@@ -100,3 +100,17 @@ New data model element: `skillSource` field on Task entity.
 
 Pages created:
 - [[wiki/notes/ambiguity-solutions]] — full solutions with diagrams, API shapes, frontend UX patterns
+
+## [2026-05-21] query | Devil's advocate — blind spots & course corrections
+
+Critical self-review of our approach. Top 5 blind spots identified:
+1. Over-documentation, under-implementation — zero app code written for a 3-day test
+2. Recursive payload + synchronous LLM = multiplicative latency — fix with Promise.all()
+3. Three-state FSM TODO→DONE block is an invented constraint — allow all transitions, only guard Done entry
+4. Explicit join tables + 3 provider adapters are YAGNI — use implicit M:N and single provider
+5. Tree-table will consume half the frontend budget — build flat table first, upgrade if time permits
+
+Recalibrated priority: ship Parts 1-6 as fast as possible, then polish.
+
+Pages created:
+- [[wiki/notes/devils-advocate-blind-spots]] — full analysis with fixes and recalibrated implementation priority

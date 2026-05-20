@@ -27,6 +27,9 @@ services:
       MOONSHOT_API_KEY: ${MOONSHOT_API_KEY:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-}
       LLM_MODEL: ${LLM_MODEL:-}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-}
     depends_on:
       db:
         condition: service_healthy

@@ -61,6 +61,10 @@ export async function classifySkills(title: string): Promise<string[]> {
       model,
       schema: skillSchema,
       prompt: PROMPT(title),
+      experimental_telemetry: {
+        isEnabled: true,
+        metadata: { taskTitle: title },
+      },
     });
     return object.skills;
   } catch (err) {

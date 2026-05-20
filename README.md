@@ -99,6 +99,21 @@ These assumptions were made for ambiguities in the spec:
 
 ---
 
+## Observability (Optional)
+
+The backend includes a full observability stack — all optional, zero-config:
+
+### Structured Logging (Pino)
+Every request is logged as structured JSON with method, URL, status, and duration. Dev mode uses `pino-pretty` for readable output. Set `LOG_LEVEL=debug` for verbose logging.
+
+### Distributed Tracing (OpenTelemetry)
+Auto-instruments Express HTTP requests, PostgreSQL queries, and outbound LLM API calls. In dev mode, spans are printed to console. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to export to Jaeger, Zipkin, or Grafana Tempo.
+
+### GenAI Observability (Langfuse)
+Traces every LLM skill classification call — latency, token usage, cost, prompt/response pairs. Set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` to enable. Sign up free at [langfuse.com](https://langfuse.com).
+
+---
+
 ## Future Improvements
 
 - Upgrade to collapsible tree-table on Task List page for better UX at scale

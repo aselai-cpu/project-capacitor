@@ -27,6 +27,7 @@ Content catalog for Project Capacitor wiki. Read this first.
 - [[wiki/decisions/001-prisma-orm]] -- ADR-001: Prisma ORM with explicit join tables, UUID keys, schema-first
 - [[wiki/decisions/002-recursive-task-payload]] -- ADR-002: Single recursive JSON payload for atomic task tree creation
 - [[wiki/decisions/003-docker-multi-stage]] -- ADR-003: Multi-stage Docker builds, Nginx frontend, healthcheck orchestration
+- [[wiki/decisions/004-vercel-ai-sdk]] -- ADR-004: Vercel AI SDK for provider-agnostic LLM with Zod structured output
 
 ## Notes
 

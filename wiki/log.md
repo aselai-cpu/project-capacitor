@@ -67,3 +67,10 @@ Added 2 new pillars to research coverage:
 Pages updated:
 - [[wiki/notes/research-papers]] — added papers 07-10 with summaries and project relevance
 - [[wiki/index]] — updated paper count (7 → 11, 3 → 5 pillars)
+
+## [2026-05-21] decision | Use Vercel AI SDK for LLM abstraction
+
+Supersedes the `@google/genai` direct dependency from the Gemini design discussion. Vercel AI SDK provides provider-agnostic LLM access with `generateObject()` + Zod for type-safe structured output. Default provider: Gemini, switchable via `LLM_PROVIDER` env var.
+
+Pages created:
+- [[wiki/decisions/004-vercel-ai-sdk]] — ADR with code examples, provider switching pattern, Zod schema approach

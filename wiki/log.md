@@ -114,3 +114,21 @@ Recalibrated priority: ship Parts 1-6 as fast as possible, then polish.
 
 Pages created:
 - [[wiki/notes/devils-advocate-blind-spots]] — full analysis with fixes and recalibrated implementation priority
+
+## [2026-05-21] decision | Final pre-implementation decisions (all 9 open questions)
+
+Synthesized all analysis into definitive answers. Key decisions:
+1. Status: TODO/IN_PROGRESS/DONE, free transitions, cascade guard on DONE only
+2. Task List: flat table with CSS indent by depth, not tree-table
+3. Subtask creation: Create page only, "Add Subtask" link from List navigates to Create with parentId
+4. LLM: synchronous, Promise.allSettled() parallel, fail-open with empty skills
+5. API: flat list + individual detail, minimal surface
+6. ORM: Prisma implicit M:N (not explicit join tables)
+7. Frontend: React + useState, no state library, React Router
+8. Backend: Express + TypeScript
+9. Docker: simple single-stage Dockerfiles
+
+Implementation order: Parts 1→2→3→4→5→6→7, ~10-14 hours total.
+
+Pages created:
+- [[wiki/notes/final-decisions]] — complete Prisma schema, API table, Docker configs, backend structure, implementation timeline

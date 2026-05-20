@@ -37,3 +37,4 @@ Content catalog for Project Capacitor wiki. Read this first.
 - [[wiki/notes/spec-ambiguities]] -- Top 5 spec ambiguities with recommended assumptions: status values, subtask display, subtask creation scope, LLM sync/async, API granularity
 - [[wiki/notes/ambiguity-solutions]] -- Concrete solutions: 3-state FSM, tree-table with lazy loading, inline subtask creation, synchronous LLM with graceful degradation, RESTful depth control
 - [[wiki/notes/devils-advocate-blind-spots]] -- Critical self-review: over-documentation, LLM latency bomb, invented constraints, YAGNI violations, UI complexity budget
+- [[wiki/notes/final-decisions]] -- DEFINITIVE: all 9 open questions answered — status FSM, flat table, Prisma implicit M:N, Express, single LLM provider, simple Docker, implementation order

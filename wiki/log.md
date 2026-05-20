@@ -143,3 +143,16 @@ Evaluated 4 React-based frameworks against project requirements:
 
 Pages created:
 - [[wiki/decisions/005-vite-react-frontend]] — ADR with full comparison table and rationale
+
+## [2026-05-21] decision | Backend framework: Express.js with Zod
+
+Evaluated 6 Node.js/TypeScript backend frameworks:
+- Express (selected) — max evaluator recognition, fastest to ship, Zod bridges TypeScript gap
+- Hono (runner-up) — 3-4x faster, native TypeScript, but low government recognition
+- Fastify (rejected) — marginal gains over Express, mild friction
+- NestJS (rejected) — over-engineered for 7 endpoints, 45-60 min to first endpoint
+- tRPC (disqualified) — RPC not REST, violates spec
+- Elysia (disqualified) — Bun-only, non-standard in government
+
+Pages created:
+- [[wiki/decisions/006-express-backend]] — ADR with Zod validation pattern and full comparison

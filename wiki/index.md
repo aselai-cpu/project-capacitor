@@ -29,6 +29,7 @@ Content catalog for Project Capacitor wiki. Read this first.
 - [[wiki/decisions/003-docker-multi-stage]] -- ADR-003: Multi-stage Docker builds, Nginx frontend, healthcheck orchestration
 - [[wiki/decisions/004-vercel-ai-sdk]] -- ADR-004: Vercel AI SDK for provider-agnostic LLM with Zod structured output
 - [[wiki/decisions/005-vite-react-frontend]] -- ADR-005: Vite + React 19 + React Router v7 + Tailwind CSS for SPA frontend
+- [[wiki/decisions/006-express-backend]] -- ADR-006: Express.js + Zod validation for backend REST API (Hono noted as future upgrade)
 
 ## Notes
 

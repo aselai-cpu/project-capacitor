@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-05-20-project-wiki-design.md`
 
+**Precondition:** A git repository must already be initialized in the project root. If not, run `git init` before starting Task 1.
+
 ---
 
 ### Task 1: Create directory structure and move PDF to raw/
@@ -55,7 +57,6 @@ wiki/requirements
 
 ```bash
 git add raw/ wiki/
-git add "Software Engineering Take Home Test v2.0.pdf"
 git commit -m "Scaffold wiki directory structure and move PDF to raw/
 
 Create raw/ for immutable source documents and wiki/ with four content
@@ -81,7 +82,7 @@ Read the PDF at `raw/Software Engineering Take Home Test v2.0.pdf` (all pages) b
 
 ```markdown
 ---
-type: entity
+type: note
 title: Project Overview
 created: 2026-05-20
 updated: 2026-05-20
@@ -100,7 +101,7 @@ Project Capacitor is a full-stack **Task Assignment** application, built as a ta
 
 ## Scope
 
-The application has 7 parts, to be completed in 3-5 calendar days:
+The application has 7 parts, to be completed in 3 calendar days (with up to 2-day extension available):
 
 1. **[[wiki/requirements/part1-database|Part 1: Database Design & Setup]]** — PostgreSQL schema for [[wiki/entities/developer|Developers]], [[wiki/entities/task|Tasks]], and [[wiki/entities/skill|Skills]] with seed data
 2. **[[wiki/requirements/part2-backend-api|Part 2: Backend API]]** — CRUD operations for Tasks, read operations for Developers and Skills
@@ -547,6 +548,10 @@ requirements from the HTX spec with constraints and acceptance criteria."
 # Wiki Index
 
 Content catalog for Project Capacitor wiki. Read this first.
+
+## Overview
+
+- [[wiki/overview]] -- Project synthesis: tech stack, scope (7 parts), key business rules
 
 ## Entities
 

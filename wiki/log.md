@@ -132,3 +132,14 @@ Implementation order: Parts 1→2→3→4→5→6→7, ~10-14 hours total.
 
 Pages created:
 - [[wiki/notes/final-decisions]] — complete Prisma schema, API table, Docker configs, backend structure, implementation timeline
+
+## [2026-05-21] decision | Frontend framework: Vite + React + React Router
+
+Evaluated 4 React-based frameworks against project requirements:
+- Vite + React (selected) — SPA-native, 42KB bundle, simplest Docker, 2-min scaffold
+- Next.js (rejected) — over-engineered, SSR/RSC not needed, 92KB bundle
+- React Router v7 framework mode (rejected) — docs fragmented from Remix merger, loaders/actions unnecessary
+- TanStack Start (rejected) — v1.0 only 3 months old, 15% adoption, too new for take-home test
+
+Pages created:
+- [[wiki/decisions/005-vite-react-frontend]] — ADR with full comparison table and rationale

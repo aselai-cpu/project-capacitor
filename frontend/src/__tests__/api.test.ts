@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fetchTasks, fetchDevelopers, createTask, updateTask } from '../lib/api';
 
 const makeJsonResponse = (data: unknown) =>
-  Promise.resolve({ json: () => Promise.resolve(data) } as Response);
+  Promise.resolve({ ok: true, json: () => Promise.resolve(data) } as Response);
 
 describe('API client', () => {
   beforeEach(() => {

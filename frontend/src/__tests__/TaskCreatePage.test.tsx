@@ -54,8 +54,8 @@ describe('TaskCreatePage', () => {
   it('renders skill buttons after fetch', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Frontend' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Backend' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Toggle Frontend skill' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Toggle Backend skill' })).toBeInTheDocument();
     });
   });
 

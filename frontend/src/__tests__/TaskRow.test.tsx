@@ -8,10 +8,6 @@ vi.mock('../lib/api', () => ({
   updateTask: vi.fn(() => Promise.resolve({})),
 }));
 
-const mockSkills = [
-  { id: 'skill-1', name: 'Frontend' },
-  { id: 'skill-2', name: 'Backend' },
-];
 
 const mockDevelopers: Developer[] = [
   { id: 'dev-1', name: 'Alice', skills: [{ id: 'skill-1', name: 'Frontend' }] },
@@ -103,7 +99,7 @@ describe('TaskRow', () => {
 
   it('shows "+ Subtask" link with correct href', () => {
     renderRow(mockTask);
-    const link = screen.getByRole('link', { name: '+ Subtask' });
+    const link = screen.getByRole('link', { name: 'Add subtask to Build homepage' });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/tasks/new?parentId=task-1');
   });

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TaskFormNode from '../components/TaskFormNode';
@@ -17,11 +18,13 @@ const makeNode = (overrides: Partial<TaskFormState> = {}): TaskFormState => ({
   ...overrides,
 });
 
+type OnUpdateFn = (id: string, updater: (n: TaskFormState) => Partial<TaskFormState>) => void;
+
 describe('TaskFormNode', () => {
-  let onUpdate: ReturnType<typeof vi.fn>;
+  let onUpdate: Mock<OnUpdateFn>;
 
   beforeEach(() => {
-    onUpdate = vi.fn();
+    onUpdate = vi.fn<OnUpdateFn>();
     vi.stubGlobal('crypto', {
       randomUUID: vi.fn(() => 'new-subtask-uuid'),
     });
@@ -35,8 +38,8 @@ describe('TaskFormNode', () => {
 
   it('renders skill buttons for each skill', () => {
     render(<TaskFormNode node={makeNode()} skills={mockSkills} depth={0} onUpdate={onUpdate} />);
-    expect(screen.getByRole('button', { name: 'Frontend' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Backend' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle Frontend skill' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle Backend skill' })).toBeInTheDocument();
   });
 
   it('calls onUpdate when title changes', async () => {
@@ -54,7 +57,7 @@ describe('TaskFormNode', () => {
   it('calls onUpdate when a skill button is clicked', async () => {
     const user = userEvent.setup();
     render(<TaskFormNode node={makeNode()} skills={mockSkills} depth={0} onUpdate={onUpdate} />);
-    await user.click(screen.getByRole('button', { name: 'Frontend' }));
+    await user.click(screen.getByRole('button', { name: 'Toggle Frontend skill' }));
     expect(onUpdate).toHaveBeenCalledOnce();
     const [calledId, updaterFn] = onUpdate.mock.calls[0];
     expect(calledId).toBe('node-1');
@@ -71,7 +74,7 @@ describe('TaskFormNode', () => {
     expect(calledId).toBe('node-1');
     const result = updaterFn({ id: 'node-1', title: '', skillIds: [], subtasks: [] });
     expect(result.subtasks).toHaveLength(1);
-    expect(result.subtasks[0]).toMatchObject({
+    expect(result.subtasks![0]).toMatchObject({
       id: 'new-subtask-uuid',
       title: '',
       skillIds: [],

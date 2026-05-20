@@ -12,6 +12,7 @@ export default function TaskFormNode({ node, skills, depth, onUpdate }: Props) {
     <div className="border-l-2 border-gray-200 pl-4 my-2" style={{ marginLeft: `${depth * 16}px` }}>
       <div className="flex gap-2 items-center mb-2">
         <input
+          aria-label="Task title"
           type="text"
           value={node.title}
           onChange={e => onUpdate(node.id, () => ({ title: e.target.value }))}
@@ -23,6 +24,8 @@ export default function TaskFormNode({ node, skills, depth, onUpdate }: Props) {
           return (
             <button
               key={skill.id}
+              aria-pressed={active}
+              aria-label={`Toggle ${skill.name} skill`}
               type="button"
               onClick={() => onUpdate(node.id, n => ({
                 skillIds: active ? n.skillIds.filter(id => id !== skill.id) : [...n.skillIds, skill.id],

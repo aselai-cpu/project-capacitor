@@ -1,5 +1,6 @@
 import type { Task, Developer } from '../lib/types';
 import { updateTask } from '../lib/api';
+import type { UpdateTaskPayload } from '../lib/api';
 
 interface Props {
   task: Task;
@@ -21,12 +22,20 @@ export default function TaskRow({ task, developers, onUpdate }: Props) {
   });
 
   const handleStatusChange = async (status: string) => {
-    await updateTask(task.id, { status });
+    try {
+      await updateTask(task.id, { status: status as UpdateTaskPayload['status'] });
+    } catch {
+      // API rejected (e.g., cascade guard) — re-fetch to revert
+    }
     onUpdate();
   };
 
   const handleAssigneeChange = async (developerId: string) => {
-    await updateTask(task.id, { developerId: developerId || null });
+    try {
+      await updateTask(task.id, { developerId: developerId || null });
+    } catch {
+      // API rejected (e.g., skill guard) — re-fetch to revert
+    }
     onUpdate();
   };
 
@@ -45,20 +54,20 @@ export default function TaskRow({ task, developers, onUpdate }: Props) {
         {task.skills.length === 0 && <span className="text-gray-400 text-xs">—</span>}
       </td>
       <td className="py-3 pr-4">
-        <select value={task.status} onChange={e => handleStatusChange(e.target.value)}
+        <select aria-label={`Status for ${task.title}`} value={task.status} onChange={e => handleStatusChange(e.target.value)}
           className="border rounded px-2 py-1 text-sm">
           {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
         </select>
       </td>
       <td className="py-3 pr-4">
-        <select value={task.developer?.id ?? ''} onChange={e => handleAssigneeChange(e.target.value)}
+        <select aria-label={`Assignee for ${task.title}`} value={task.developer?.id ?? ''} onChange={e => handleAssigneeChange(e.target.value)}
           className="border rounded px-2 py-1 text-sm">
           <option value="">Unassigned</option>
           {eligibleDevs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
       </td>
       <td className="py-3">
-        <a href={`/tasks/new?parentId=${task.id}`} className="text-blue-600 text-sm hover:underline">
+        <a href={`/tasks/new?parentId=${task.id}`} aria-label={`Add subtask to ${task.title}`} className="text-blue-600 text-sm hover:underline">
           + Subtask
         </a>
       </td>

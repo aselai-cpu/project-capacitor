@@ -33,8 +33,9 @@ services:
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-}
-      # OpenTelemetry — send traces to the collector
+      # Observability — traces to OTel Collector, logs to Loki
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      LOKI_HOST: http://loki:3100
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_SERVICE_NAME: capacitor-backend
     depends_on:

@@ -35,17 +35,37 @@ model Skill {
 }
 
 model Task {
-  id          String     @id @default(uuid())
-  title       String
-  status      TaskStatus @default(TODO)
-  parentId    String?    @map("parent_id")
-  parent      Task?      @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  subtasks    Task[]     @relation("TaskHierarchy")
-  developerId String?    @map("developer_id")
-  developer   Developer? @relation(fields: [developerId], references: [id], onDelete: SetNull)
-  skills      Skill[]
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  id                 String     @id @default(uuid())
+  title              String
+  status             TaskStatus @default(TODO)
+  parentId           String?    @map("parent_id")
+  parent             Task?      @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks           Task[]     @relation("TaskHierarchy")
+  developerId        String?    @map("developer_id")
+  developer          Developer? @relation(fields: [developerId], references: [id], onDelete: SetNull)
+  skills             Skill[]
+  projectId          String?    @map("project_id")
+  project            Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  acceptanceCriteria String?    @map("acceptance_criteria")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
 
   @@map("tasks")
+}
+
+model Project {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  techStack    String[] @map("tech_stack")
+  architecture String?
+  domain       String?
+  requirements String?
+  constraints  String?
+  stakeholders String?
+  tasks        Task[]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("projects")
 }

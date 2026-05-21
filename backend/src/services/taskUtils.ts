@@ -7,6 +7,8 @@ export interface TaskWithRelations {
   status: string;
   parentId: string | null;
   developerId: string | null;
+  projectId: string | null;
+  acceptanceCriteria: string | null;
   createdAt: Date;
   updatedAt: Date;
   skills: { id: string; name: string }[];
@@ -57,6 +59,8 @@ export function toPrismaCreate(node: CreateTaskInput, isRoot = true): any {
     // Only set parentId on the root node (for "Add Subtask" from List page).
     // For nested children, Prisma auto-wires parentId via subtasks: { create: [...] }.
     ...(isRoot && node.parentId ? { parent: { connect: { id: node.parentId } } } : {}),
+    ...(isRoot && node.projectId ? { project: { connect: { id: node.projectId } } } : {}),
+    ...(node.acceptanceCriteria ? { acceptanceCriteria: node.acceptanceCriteria } : {}),
     skills: node.skillIds.length > 0
       ? { connect: node.skillIds.map(id => ({ id })) }
       : undefined,

@@ -81,6 +81,7 @@ export async function createTask(input: CreateTaskInput) {
   // --- LLM enrichment ---
   const skills = await prisma.skill.findMany();
   const skillMap = new Map(skills.map(s => [s.name, s.id]));
+  const availableSkillNames = skills.map(s => s.name);
 
   const needsSkills = collectNodesWithoutSkills(input);
 
@@ -89,7 +90,7 @@ export async function createTask(input: CreateTaskInput) {
       const LLM_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS) || 5000;
       const timeout = new Promise<never>((_, rej) => setTimeout(() => rej('timeout'), LLM_TIMEOUT_MS));
       const results = await Promise.race([
-        Promise.allSettled(needsSkills.map(n => classifySkills(n.title))),
+        Promise.allSettled(needsSkills.map(n => classifySkills(n.title, availableSkillNames))),
         timeout,
       ]);
       (results as PromiseSettledResult<string[]>[]).forEach((r, i) => {

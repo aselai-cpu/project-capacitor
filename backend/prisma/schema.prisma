@@ -13,12 +13,15 @@ enum TaskStatus {
 }
 
 model Developer {
-  id        String   @id @default(uuid())
-  name      String
-  skills    Skill[]
-  tasks     Task[]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(uuid())
+  name       String
+  bio        String?
+  cvText     String?  @map("cv_text")
+  cvFileName String?  @map("cv_file_name")
+  skills     Skill[]
+  tasks      Task[]
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("developers")
 }

@@ -9,12 +9,14 @@ import type { LanguageModel } from 'ai';
 import { z } from 'zod';
 import { logger } from '../lib/logger.js';
 
-const skillSchema = z.object({
-  skills: z.array(z.enum(['Frontend', 'Backend']))
+const cvSkillSchema = z.object({
+  skills: z.array(z.object({
+    name: z.string(),
+    level: z.enum(['beginner', 'intermediate', 'advanced', 'expert']),
+  })),
+  bio: z.string(),
+  experience: z.string(),
 });
-
-const PROMPT = (title: string) =>
-  `You are a task classifier. Given this software task description, identify which technical skills it requires. Only classify as "Frontend" (UI, CSS, components, pages) or "Backend" (APIs, databases, servers, security) or both.\n\nTask: "${title}"`;
 
 /**
  * Auto-detect LLM provider from environment variables.
@@ -211,21 +213,72 @@ Stories should cover different aspects: core features, edge cases, admin, user m
   return object.stories;
 }
 
-// --- Skill classification ---
+// --- CV skill extraction ---
 
-export async function classifySkills(title: string): Promise<string[]> {
+export async function extractSkillsFromCV(cvText: string): Promise<{
+  skills: { name: string; level: string }[];
+  bio: string;
+  experience: string;
+}> {
   try {
     const model = await getModel();
     const { object } = await generateObject({
       model,
-      schema: skillSchema,
-      prompt: PROMPT(title),
+      schema: cvSkillSchema,
+      prompt: `You are an HR tech AI that analyzes CVs/resumes. Extract the following from this CV:
+
+1. skills: An array of technical and professional skills. Each skill has:
+   - name: The skill name (e.g., "React", "Node.js", "PostgreSQL", "System Design", "Docker", "AWS", "Python", "Team Leadership", "Agile")
+   - level: One of "beginner", "intermediate", "advanced", "expert" based on the CV evidence
+
+2. bio: A concise 1-2 sentence professional summary of this person
+
+3. experience: A brief summary of their work experience (2-3 sentences)
+
+Be thorough — extract ALL identifiable skills including programming languages, frameworks, databases, tools, methodologies, and soft skills.
+
+CV Text:
+${cvText}`,
+      experimental_telemetry: {
+        isEnabled: true,
+        metadata: { feature: 'cv-skill-extraction' },
+      },
+    });
+    return object;
+  } catch (err) {
+    logger.warn({ err }, 'LLM CV skill extraction failed');
+    return { skills: [], bio: '', experience: '' };
+  }
+}
+
+// --- Skill classification ---
+
+export async function classifySkills(title: string, availableSkills?: string[]): Promise<string[]> {
+  try {
+    const model = await getModel();
+    const skillNames = availableSkills || ['Frontend', 'Backend'];
+
+    const dynamicSchema = z.object({
+      skills: z.array(z.string()),
+    });
+
+    const { object } = await generateObject({
+      model,
+      schema: dynamicSchema,
+      prompt: `You are a task classifier. Given this software task description, identify which skills it requires from the available skill set.
+
+Available skills: ${skillNames.join(', ')}
+
+Task: "${title}"
+
+Return ONLY skills from the available list above. Return an empty array if no skills match.`,
       experimental_telemetry: {
         isEnabled: true,
         metadata: { taskTitle: title },
       },
     });
-    return object.skills;
+    // Filter to only skills that actually exist in the available list
+    return object.skills.filter(s => skillNames.includes(s));
   } catch (err) {
     logger.warn({ title, err }, 'LLM classify failed');
     return [];

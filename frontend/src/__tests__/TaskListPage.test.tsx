@@ -7,6 +7,7 @@ import type { Task, Developer } from '../lib/types';
 vi.mock('../lib/api', () => ({
   fetchTasks: vi.fn(),
   fetchDevelopers: vi.fn(),
+  fetchProjects: vi.fn(),
   updateTask: vi.fn(() => Promise.resolve({})),
 }));
 
@@ -35,19 +36,21 @@ describe('TaskListPage', () => {
   });
 
   it('shows empty state when no tasks', async () => {
-    const { fetchTasks, fetchDevelopers } = await import('../lib/api');
+    const { fetchTasks, fetchDevelopers, fetchProjects } = await import('../lib/api');
     vi.mocked(fetchTasks).mockResolvedValue([]);
     vi.mocked(fetchDevelopers).mockResolvedValue([]);
+    vi.mocked(fetchProjects).mockResolvedValue([]);
     render(<MemoryRouter><TaskListPage /></MemoryRouter>);
     await waitFor(() => {
-      expect(screen.getByText(/No tasks yet/i)).toBeInTheDocument();
+      expect(screen.getByText(/No tasks match the current filters/i)).toBeInTheDocument();
     });
   });
 
   it('renders tasks fetched from API', async () => {
-    const { fetchTasks, fetchDevelopers } = await import('../lib/api');
+    const { fetchTasks, fetchDevelopers, fetchProjects } = await import('../lib/api');
     vi.mocked(fetchTasks).mockResolvedValue([mockTask]);
     vi.mocked(fetchDevelopers).mockResolvedValue([mockDeveloper]);
+    vi.mocked(fetchProjects).mockResolvedValue([]);
     render(<MemoryRouter><TaskListPage /></MemoryRouter>);
     await waitFor(() => {
       expect(screen.getByText('Build homepage')).toBeInTheDocument();
@@ -55,17 +58,19 @@ describe('TaskListPage', () => {
   });
 
   it('renders "Create Task" link pointing to /tasks/new', async () => {
-    const { fetchTasks, fetchDevelopers } = await import('../lib/api');
+    const { fetchTasks, fetchDevelopers, fetchProjects } = await import('../lib/api');
     vi.mocked(fetchTasks).mockResolvedValue([]);
     vi.mocked(fetchDevelopers).mockResolvedValue([]);
+    vi.mocked(fetchProjects).mockResolvedValue([]);
     render(<MemoryRouter><TaskListPage /></MemoryRouter>);
     expect(screen.getByRole('link', { name: 'Create Task' })).toHaveAttribute('href', '/tasks/new');
   });
 
   it('renders table headers', async () => {
-    const { fetchTasks, fetchDevelopers } = await import('../lib/api');
+    const { fetchTasks, fetchDevelopers, fetchProjects } = await import('../lib/api');
     vi.mocked(fetchTasks).mockResolvedValue([]);
     vi.mocked(fetchDevelopers).mockResolvedValue([]);
+    vi.mocked(fetchProjects).mockResolvedValue([]);
     render(<MemoryRouter><TaskListPage /></MemoryRouter>);
     await waitFor(() => {
       expect(screen.getByText('Task Title')).toBeInTheDocument();

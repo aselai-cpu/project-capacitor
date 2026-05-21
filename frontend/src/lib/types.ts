@@ -56,3 +56,9 @@ export interface TaskFormState {
   skillIds: string[];
   subtasks: TaskFormState[];
 }
+
+export interface TaskFilters {
+  projectId?: string;
+  status?: string;
+  developerId?: string;
+}

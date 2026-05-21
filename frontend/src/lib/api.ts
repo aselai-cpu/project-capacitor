@@ -33,8 +33,14 @@ export interface UpdateTaskPayload {
   developerId?: string | null;
 }
 
-export const fetchTasks = (): Promise<Task[]> =>
-  fetch(`${API}/api/tasks`).then(r => handleResponse<Task[]>(r));
+export const fetchTasks = (filters?: { projectId?: string; status?: string; developerId?: string }): Promise<Task[]> => {
+  const params = new URLSearchParams();
+  if (filters?.projectId) params.set('projectId', filters.projectId);
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.developerId) params.set('developerId', filters.developerId);
+  const qs = params.toString();
+  return fetch(`${API}/api/tasks${qs ? `?${qs}` : ''}`).then(r => handleResponse<Task[]>(r));
+};
 
 export const fetchDevelopers = (): Promise<Developer[]> =>
   fetch(`${API}/api/developers`).then(r => handleResponse<Developer[]>(r));

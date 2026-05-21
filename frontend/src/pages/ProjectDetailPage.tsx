@@ -189,7 +189,7 @@ export default function ProjectDetailPage() {
               </div>
             ))}
           </div>
-          <Link to="/tasks" className="text-blue-600 text-sm hover:underline mt-2 inline-block">View all tasks →</Link>
+          <Link to={`/tasks?projectId=${project.id}`} className="text-blue-600 text-sm hover:underline mt-2 inline-block">View all tasks →</Link>
         </div>
       )}
     </div>

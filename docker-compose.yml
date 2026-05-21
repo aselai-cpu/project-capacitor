@@ -29,16 +29,16 @@ services:
       MOONSHOT_API_KEY: ${MOONSHOT_API_KEY:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-}
       LLM_MODEL: ${LLM_MODEL:-}
+      LLM_TIMEOUT_MS: "15000"
       # Langfuse GenAI observability (optional)
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-}
-      LLM_TIMEOUT_MS: "15000"
-      # Observability — traces to OTel Collector (→ Tempo), logs direct to Loki
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-      LOKI_HOST: http://loki:3100
+      # Observability — traces direct to Tempo, logs direct to Loki
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_SERVICE_NAME: capacitor-backend
+      LOKI_HOST: http://loki:3100
     depends_on:
       db:
         condition: service_healthy
@@ -50,19 +50,9 @@ services:
     depends_on:
       - backend
 
-  # ── Observability Stack ──────────────────────────────────────
+  # ── Observability ────────────────────────────────────────────
 
-  # OpenTelemetry Collector — receives traces from app, forwards to Tempo
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    restart: unless-stopped
-    volumes:
-      - ./observability/otel-collector-config.yaml:/etc/otelcol/config.yaml
-    ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-
-  # Grafana Tempo — stores distributed traces
+  # Tempo — stores distributed traces (accepts OTLP directly)
   tempo:
     image: grafana/tempo:2.4.1
     restart: unless-stopped
@@ -70,22 +60,22 @@ services:
     volumes:
       - ./observability/tempo.yaml:/etc/tempo.yaml
 
-  # Grafana Loki — stores structured logs
+  # Loki — stores structured logs (receives from pino-loki)
   loki:
     image: grafana/loki:3.0.0
     restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - ./observability/loki-config.yaml:/etc/loki/local-config.yaml
     ports:
       - "3100:3100"
+    volumes:
+      - ./observability/loki-config.yaml:/etc/loki/local-config.yaml
 
-  # Grafana — UI dashboard for traces and logs
+  # Grafana — UI for traces and logs
   grafana:
     image: grafana/grafana:11.0.0
     restart: unless-stopped
     ports:
-      - "3001:3000"   # Port 3000 taken by frontend → use 3001
+      - "3001:3000"
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin

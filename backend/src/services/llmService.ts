@@ -253,7 +253,7 @@ ${cvText}`,
 
 // --- Skill classification ---
 
-export async function classifySkills(title: string, availableSkills?: string[]): Promise<string[]> {
+export async function classifySkills(title: string, availableSkills?: string[], context?: string): Promise<string[]> {
   try {
     const model = await getModel();
     const skillNames = availableSkills || ['Frontend', 'Backend'];
@@ -269,7 +269,7 @@ export async function classifySkills(title: string, availableSkills?: string[]):
 
 Available skills: ${skillNames.join(', ')}
 
-Task: "${title}"
+Task: "${title}"${context ? `\nAdditional context: ${context}` : ''}
 
 Return ONLY skills from the available list above. Return an empty array if no skills match.`,
       experimental_telemetry: {
@@ -282,5 +282,45 @@ Return ONLY skills from the available list above. Return an empty array if no sk
   } catch (err) {
     logger.warn({ title, err }, 'LLM classify failed');
     return [];
+  }
+}
+
+// --- Allocation reasoning ---
+
+export async function generateAllocationReason(
+  taskTitle: string,
+  taskSkills: string[],
+  developerName: string,
+  developerSkills: string[],
+  currentTaskCount: number,
+): Promise<string> {
+  try {
+    const model = await getModel();
+    const reasonSchema = z.object({
+      reason: z.string(),
+    });
+
+    const { object } = await generateObject({
+      model,
+      schema: reasonSchema,
+      prompt: `You are an AI assistant helping a project manager assign tasks to developers.
+
+Task: "${taskTitle}"
+Required skills: ${taskSkills.join(', ')}
+
+Developer: ${developerName}
+Developer skills: ${developerSkills.join(', ')}
+Current workload: ${currentTaskCount} task(s)
+
+Write a 1-2 sentence explanation of why this developer is a good fit for this task. Consider skill overlap and current workload. Be concise and specific.`,
+      experimental_telemetry: {
+        isEnabled: true,
+        metadata: { feature: 'allocation-reason' },
+      },
+    });
+    return object.reason;
+  } catch (err) {
+    logger.warn({ err, taskTitle, developerName }, 'LLM allocation reason failed');
+    return 'AI reasoning unavailable.';
   }
 }

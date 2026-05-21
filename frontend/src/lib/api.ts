@@ -1,4 +1,4 @@
-import type { Task, Developer, Skill } from './types';
+import type { Task, Developer, Skill, Project, GeneratedStory } from './types';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -24,6 +24,8 @@ export interface CreateTaskPayload {
   skillIds: string[];
   parentId?: string | null;
   subtasks?: CreateTaskPayload[];
+  projectId?: string | null;
+  acceptanceCriteria?: string | null;
 }
 
 export interface UpdateTaskPayload {
@@ -64,3 +66,35 @@ export const updateTask = (id: string, body: UpdateTaskPayload): Promise<Task> =
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }).then(r => handleResponse<Task>(r));
+
+// --- Project API ---
+
+export interface CreateProjectPayload {
+  name: string;
+  description?: string;
+}
+
+export const fetchProjects = (): Promise<Project[]> =>
+  fetch(`${API}/api/projects`).then(r => handleResponse<Project[]>(r));
+
+export const fetchProject = (id: string): Promise<Project> =>
+  fetch(`${API}/api/projects/${id}`).then(r => handleResponse<Project>(r));
+
+export const createProjectApi = (body: CreateProjectPayload): Promise<Project> =>
+  fetch(`${API}/api/projects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(r => handleResponse<Project>(r));
+
+export const enrichProjectApi = (id: string): Promise<Project> =>
+  fetch(`${API}/api/projects/${id}/enrich`, { method: 'POST' })
+    .then(r => handleResponse<Project>(r));
+
+export const generateStories = (projectId: string): Promise<{ stories: GeneratedStory[] }> =>
+  fetch(`${API}/api/projects/${projectId}/generate-stories`, { method: 'POST' })
+    .then(r => handleResponse<{ stories: GeneratedStory[] }>(r));
+
+export const deleteProjectApi = (id: string): Promise<void> =>
+  fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
+    .then(r => handleResponse<void>(r));

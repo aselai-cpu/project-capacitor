@@ -19,6 +19,8 @@ const mockTask: Task = {
   skills: [{ id: 'skill-1', name: 'Frontend' }],
   developer: null,
   createdAt: '2026-05-21T00:00:00Z',
+  projectId: null,
+  acceptanceCriteria: null,
 };
 
 const mockDeveloper: Developer = {

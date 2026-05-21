@@ -18,6 +18,28 @@ export interface Task {
   skills: Skill[];
   developer: Developer | null;
   createdAt: string;
+  projectId: string | null;
+  acceptanceCriteria: string | null;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  techStack: string[];
+  architecture: string | null;
+  domain: string | null;
+  requirements: string | null;
+  constraints: string | null;
+  stakeholders: string | null;
+  tasks: { id: string; title: string; status: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GeneratedStory {
+  title: string;
+  acceptanceCriteria: string;
 }
 
 export interface TaskFormState {

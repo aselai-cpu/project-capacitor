@@ -25,7 +25,7 @@ const mockTask: Task = {
 
 const mockDeveloper: Developer = {
   id: 'dev-1',
-  name: 'Alice',
+  name: 'Alice', bio: null, cvText: null, cvFileName: null,
   skills: [{ id: 'skill-1', name: 'Frontend' }],
 };
 

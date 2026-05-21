@@ -10,11 +10,14 @@ vi.mock('../lib/api', () => ({
 
 
 const mockDevelopers: Developer[] = [
-  { id: 'dev-1', name: 'Alice', skills: [{ id: 'skill-1', name: 'Frontend' }] },
-  { id: 'dev-2', name: 'Bob', skills: [{ id: 'skill-2', name: 'Backend' }] },
+  { id: 'dev-1', name: 'Alice', bio: null, cvText: null, cvFileName: null, skills: [{ id: 'skill-1', name: 'Frontend' }] },
+  { id: 'dev-2', name: 'Bob', bio: null, cvText: null, cvFileName: null, skills: [{ id: 'skill-2', name: 'Backend' }] },
   {
     id: 'dev-3',
     name: 'Carol',
+    bio: null,
+    cvText: null,
+    cvFileName: null,
     skills: [
       { id: 'skill-1', name: 'Frontend' },
       { id: 'skill-2', name: 'Backend' },

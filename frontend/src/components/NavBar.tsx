@@ -10,6 +10,7 @@ export default function NavBar() {
       <span className="font-bold text-lg mr-4">Capacitor</span>
       <Link to="/projects" className={linkClass('/projects')}>Projects</Link>
       <Link to="/tasks" className={linkClass('/tasks')}>Tasks</Link>
+      <Link to="/developers" className={linkClass('/developers')}>Developers</Link>
     </nav>
   );
 }

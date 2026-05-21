@@ -1,4 +1,4 @@
-import type { Task, Developer, Skill, Project, GeneratedStory } from './types';
+import type { Task, Developer, Skill, Project, GeneratedStory, ExtractedSkill } from './types';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -98,3 +98,26 @@ export const generateStories = (projectId: string): Promise<{ stories: Generated
 export const deleteProjectApi = (id: string): Promise<void> =>
   fetch(`${API}/api/projects/${id}`, { method: 'DELETE' })
     .then(r => handleResponse<void>(r));
+
+// --- Developer Profile API ---
+
+export const fetchDeveloper = (id: string): Promise<Developer> =>
+  fetch(`${API}/api/developers/${id}`).then(r => handleResponse<Developer>(r));
+
+export interface CVExtractionResult extends Developer {
+  extractedSkills: ExtractedSkill[];
+}
+
+export const uploadCV = async (developerId: string, file: File): Promise<CVExtractionResult> => {
+  const formData = new FormData();
+  formData.append('cv', file);
+  return fetch(`${API}/api/developers/${developerId}/upload-cv`, { method: 'POST', body: formData })
+    .then(r => handleResponse<CVExtractionResult>(r));
+};
+
+export const extractSkillsFromText = (developerId: string, cvText: string): Promise<CVExtractionResult> =>
+  fetch(`${API}/api/developers/${developerId}/extract-skills`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cvText }),
+  }).then(r => handleResponse<CVExtractionResult>(r));

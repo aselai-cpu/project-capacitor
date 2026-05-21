@@ -5,6 +5,8 @@ import TaskCreatePage from './pages/TaskCreatePage';
 import ProjectListPage from './pages/ProjectListPage';
 import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import DeveloperListPage from './pages/DeveloperListPage';
+import DeveloperProfilePage from './pages/DeveloperProfilePage';
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/tasks" element={<TaskListPage />} />
         <Route path="/tasks/new" element={<TaskCreatePage />} />
+        <Route path="/developers" element={<DeveloperListPage />} />
+        <Route path="/developers/:id" element={<DeveloperProfilePage />} />
         <Route path="*" element={<Navigate to="/projects" replace />} />
       </Routes>
     </BrowserRouter>

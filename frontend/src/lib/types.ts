@@ -6,7 +6,15 @@ export interface Skill {
 export interface Developer {
   id: string;
   name: string;
+  bio: string | null;
+  cvText: string | null;
+  cvFileName: string | null;
   skills: Skill[];
+}
+
+export interface ExtractedSkill {
+  name: string;
+  level: string;
 }
 
 export interface Task {

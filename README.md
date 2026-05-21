@@ -107,10 +107,28 @@ The backend includes a full observability stack — all optional, zero-config:
 Every request is logged as structured JSON with method, URL, status, and duration. Dev mode uses `pino-pretty` for readable output. Set `LOG_LEVEL=debug` for verbose logging.
 
 ### Distributed Tracing (OpenTelemetry)
-Auto-instruments Express HTTP requests, PostgreSQL queries, and outbound LLM API calls. In dev mode, spans are printed to console. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to export to Jaeger, Zipkin, or Grafana Tempo.
+Auto-instruments Express HTTP requests, PostgreSQL queries, and outbound LLM API calls. In dev mode, spans are printed to console. In Docker, traces are sent to the OTel Collector → Tempo automatically.
 
 ### GenAI Observability (Langfuse)
 Traces every LLM skill classification call — latency, token usage, cost, prompt/response pairs. Set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` to enable. Sign up free at [langfuse.com](https://langfuse.com).
+
+### Observability Backend (Grafana + Tempo + Loki)
+
+`docker-compose up` automatically starts a complete observability backend:
+
+```
+[ Backend App ]  ──OTLP──→  [ OTel Collector ]  ──→  [ Tempo (traces) ]
+                                                 ──→  [ Loki (logs) ]
+                                                          ↓
+                                                    [ Grafana UI :3001 ]
+```
+
+- **Grafana UI:** http://localhost:3001 — search traces, view logs, click trace IDs in logs
+- **Tempo:** Stores distributed traces (Express → Prisma → LLM call chains)
+- **Loki:** Stores structured JSON logs from Pino
+- **OTel Collector:** Receives OTLP from the backend, batches and forwards to Tempo
+
+To view traces: Open Grafana → Explore → Select "Tempo" → Search by service name or trace ID.
 
 ---
 

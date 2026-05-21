@@ -25,6 +25,7 @@ npx playwright test                # 8 E2E tests
 
 # Docker (full stack)
 docker-compose up --build          # Start all services
+# Ports: Frontend :3000 | Backend :5000 | Grafana :3001 | Loki :3100
 ```
 
 ## LLM Configuration

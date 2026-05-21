@@ -1,4 +1,6 @@
 services:
+  # ── Application ──────────────────────────────────────────────
+
   db:
     image: postgres:15-alpine
     restart: unless-stopped
@@ -27,9 +29,14 @@ services:
       MOONSHOT_API_KEY: ${MOONSHOT_API_KEY:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-}
       LLM_MODEL: ${LLM_MODEL:-}
+      # Langfuse GenAI observability (optional)
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-}
+      # OpenTelemetry — send traces to the collector
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: capacitor-backend
     depends_on:
       db:
         condition: service_healthy
@@ -40,6 +47,52 @@ services:
     ports: ["3000:3000"]
     depends_on:
       - backend
+
+  # ── Observability Stack ──────────────────────────────────────
+
+  # OpenTelemetry Collector — receives traces from app, forwards to Tempo
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    restart: unless-stopped
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+  # Grafana Tempo — stores distributed traces
+  tempo:
+    image: grafana/tempo:2.4.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml
+
+  # Grafana Loki — stores structured logs
+  loki:
+    image: grafana/loki:3.0.0
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./observability/loki-config.yaml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+
+  # Grafana — UI dashboard for traces and logs
+  grafana:
+    image: grafana/grafana:11.0.0
+    restart: unless-stopped
+    ports:
+      - "3001:3000"   # Port 3000 taken by frontend → use 3001
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - ./observability/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    depends_on:
+      - loki
+      - tempo
 
 volumes:
   pgdata:

@@ -5,10 +5,12 @@ const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL'] });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Clear existing data for idempotent re-runs (Docker restarts)
-  await prisma.task.deleteMany();
-  await prisma.developer.deleteMany();
-  await prisma.skill.deleteMany();
+  // Skip seeding if data already exists (preserve user data across Docker restarts)
+  const existingSkills = await prisma.skill.count();
+  if (existingSkills > 0) {
+    console.log(`Seed skipped: ${existingSkills} skills already exist`);
+    return;
+  }
 
   // Create real tech skills (flat — no hierarchy)
   const skillNames = [

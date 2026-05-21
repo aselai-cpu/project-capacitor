@@ -121,3 +121,32 @@ export const extractSkillsFromText = (developerId: string, cvText: string): Prom
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cvText }),
   }).then(r => handleResponse<CVExtractionResult>(r));
+
+export interface CreateDeveloperPayload {
+  name: string;
+  skillIds?: string[];
+}
+
+export interface UpdateDeveloperPayload {
+  name?: string;
+  bio?: string;
+  skillIds?: string[];
+}
+
+export const createDeveloper = (body: CreateDeveloperPayload): Promise<Developer> =>
+  fetch(`${API}/api/developers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(r => handleResponse<Developer>(r));
+
+export const updateDeveloper = (id: string, body: UpdateDeveloperPayload): Promise<Developer> =>
+  fetch(`${API}/api/developers/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(r => handleResponse<Developer>(r));
+
+export const deleteDeveloper = (id: string): Promise<void> =>
+  fetch(`${API}/api/developers/${id}`, { method: 'DELETE' })
+    .then(r => handleResponse<void>(r));

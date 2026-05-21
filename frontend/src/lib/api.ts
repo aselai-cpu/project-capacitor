@@ -47,6 +47,17 @@ export const createTask = (body: CreateTaskPayload): Promise<Task> =>
     body: JSON.stringify(body),
   }).then(r => handleResponse<Task>(r));
 
+export interface Recommendation {
+  developerId: string;
+  developerName: string;
+  reason: string;
+}
+
+export const recommendAssignee = (taskId: string): Promise<Recommendation | null> =>
+  fetch(`${API}/api/tasks/${taskId}/recommend-assignee`, { method: 'POST' })
+    .then(r => r.ok ? r.json() as Promise<Recommendation> : null)
+    .catch(() => null);
+
 export const updateTask = (id: string, body: UpdateTaskPayload): Promise<Task> =>
   fetch(`${API}/api/tasks/${id}`, {
     method: 'PATCH',

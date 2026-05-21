@@ -38,6 +38,16 @@ router.patch('/:id', validate(updateTaskSchema), asyncHandler(async (req, res) =
   res.json(result.data);
 }));
 
+// AI-recommended developer assignment
+router.post('/:id/recommend-assignee', asyncHandler(async (req, res) => {
+  const recommendation = await taskService.getRecommendedAssignee(req.params.id as string);
+  if (!recommendation) {
+    res.status(404).json({ error: 'No recommendation available' });
+    return;
+  }
+  res.json(recommendation);
+}));
+
 // Test cleanup endpoint — deletes all tasks (for E2E test isolation)
 router.delete('/', async (_, res) => {
   await taskService.deleteAllTasks();

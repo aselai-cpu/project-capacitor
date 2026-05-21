@@ -3,7 +3,8 @@ import prisma from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import type { CreateTaskInput } from '../types.js';
 import { TaskStatus } from '@prisma/client';
-import { classifySkills } from './llmService.js';
+import { classifySkills, recommendDeveloper } from './llmService.js';
+import type { DeveloperInfo } from './llmService.js';
 import { computeFlatListWithDepth, buildTree, toPrismaCreate, collectNodesWithoutSkills } from './taskUtils.js';
 import type { TaskWithRelations } from './taskUtils.js';
 
@@ -117,6 +118,41 @@ export async function createTask(input: CreateTaskInput) {
 
   // Re-fetch as tree for response
   return getTaskById(created.id);
+}
+
+// --- POST /api/tasks/:id/recommend-assignee ---
+export async function getRecommendedAssignee(taskId: string) {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { skills: true },
+  });
+  if (!task) return null;
+
+  const taskSkillIds = new Set(task.skills.map(s => s.id));
+  const taskSkillNames = task.skills.map(s => s.name);
+
+  // Get all developers with skills
+  const allDevs = await prisma.developer.findMany({
+    include: {
+      skills: true,
+      tasks: { select: { id: true } },
+    },
+  });
+
+  // Filter to eligible developers (skill superset)
+  const eligible: DeveloperInfo[] = allDevs
+    .filter(d => {
+      const devSkillIds = new Set(d.skills.map(s => s.id));
+      return task.skills.every(s => devSkillIds.has(s.id));
+    })
+    .map(d => ({
+      id: d.id,
+      name: d.name,
+      skills: d.skills.map(s => s.name),
+      currentTaskCount: d.tasks.length,
+    }));
+
+  return recommendDeveloper(task.title, taskSkillNames, eligible);
 }
 
 // --- DELETE /api/tasks (test cleanup) ---

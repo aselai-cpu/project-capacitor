@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import type { Task, Developer } from '../lib/types';
-import { updateTask } from '../lib/api';
-import type { UpdateTaskPayload } from '../lib/api';
+import { updateTask, recommendAssignee } from '../lib/api';
+import type { UpdateTaskPayload, Recommendation } from '../lib/api';
 
 interface Props {
   task: Task;
@@ -16,6 +17,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function TaskRow({ task, developers, onUpdate }: Props) {
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
+  const [loadingRec, setLoadingRec] = useState(false);
+
   const eligibleDevs = developers.filter(dev => {
     const devSkillIds = new Set(dev.skills.map(s => s.id));
     return task.skills.every(s => devSkillIds.has(s.id));
@@ -36,7 +40,15 @@ export default function TaskRow({ task, developers, onUpdate }: Props) {
     } catch {
       // API rejected (e.g., skill guard) — re-fetch to revert
     }
+    setRecommendation(null);
     onUpdate();
+  };
+
+  const handleRecommend = async () => {
+    setLoadingRec(true);
+    const rec = await recommendAssignee(task.id);
+    setRecommendation(rec);
+    setLoadingRec(false);
   };
 
   return (
@@ -60,11 +72,33 @@ export default function TaskRow({ task, developers, onUpdate }: Props) {
         </select>
       </td>
       <td className="py-3 pr-4">
-        <select aria-label={`Assignee for ${task.title}`} value={task.developer?.id ?? ''} onChange={e => handleAssigneeChange(e.target.value)}
-          className="border rounded px-2 py-1 text-sm">
-          <option value="">Unassigned</option>
-          {eligibleDevs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
+        <div className="flex items-center gap-1">
+          <select aria-label={`Assignee for ${task.title}`} value={task.developer?.id ?? ''} onChange={e => handleAssigneeChange(e.target.value)}
+            className="border rounded px-2 py-1 text-sm">
+            <option value="">Unassigned</option>
+            {eligibleDevs.map(d => (
+              <option key={d.id} value={d.id}>
+                {d.name}{recommendation?.developerId === d.id ? ' ★' : ''}
+              </option>
+            ))}
+          </select>
+          {!task.developer && task.skills.length > 0 && !recommendation && (
+            <button
+              onClick={handleRecommend}
+              disabled={loadingRec}
+              className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded hover:bg-purple-200 whitespace-nowrap"
+              title="Ask AI to recommend a developer"
+            >
+              {loadingRec ? '...' : '🤖'}
+            </button>
+          )}
+        </div>
+        {recommendation && (
+          <div className="mt-1 text-xs text-purple-600 max-w-48">
+            <span className="font-medium">AI: </span>
+            {recommendation.reason}
+          </div>
+        )}
       </td>
       <td className="py-3">
         <a href={`/tasks/new?parentId=${task.id}`} aria-label={`Add subtask to ${task.title}`} className="text-blue-600 text-sm hover:underline">

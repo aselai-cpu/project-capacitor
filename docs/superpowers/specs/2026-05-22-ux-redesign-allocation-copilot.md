@@ -93,9 +93,7 @@ If fewer than 3 developers have 100% skill match, show all eligible developers. 
 
 This view gives the deepest context per match — useful when the PM wants to understand *why* the AI recommends someone.
 
-**Data source:** New `POST /api/allocate/score` endpoint that accepts a list of task IDs and returns match scores for all developers. The scoring uses the existing skill-matching logic (developer skills ⊇ task skills) enhanced with the LLM for reasoning text. Scores can be computed as:
-- Skill overlap percentage (deterministic, fast)
-- LLM-generated reasoning (on-demand, per task-developer pair when Focus view requests it)
+**Data source:** The `GET /api/allocate/scores` endpoint returns match scores for all unassigned tasks against all developers, optionally filtered by project. Scoring is deterministic (skill overlap percentage — no LLM needed). LLM-generated reasoning is fetched on-demand per task-developer pair via `POST /api/allocate/reason` when the Focus view renders a developer card.
 
 ### 4. Task Creation — AI-First Skill Classification
 
@@ -172,6 +170,7 @@ interface ScoreResponse {
       developerId: string;
       developerName: string;
       matchPercent: number;       // 0-100, deterministic skill overlap
+      missingSkills: string[];    // skill names the developer lacks (for tooltip on yellow/red cells)
       currentTaskCount: number;
       isTopPick: boolean;
     }>;

@@ -52,10 +52,10 @@ export default function DeveloperListPage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Developers</h1>
+        <h1 className="text-2xl font-bold">Team</h1>
         <button onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          {showForm ? 'Cancel' : 'Create Developer'}
+          {showForm ? 'Cancel' : 'Add Team Member'}
         </button>
       </div>
 

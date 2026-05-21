@@ -76,7 +76,7 @@ export default function DeveloperProfilePage() {
     if (!id || !confirm('Are you sure you want to delete this developer?')) return;
     try {
       await deleteDeveloper(id);
-      navigate('/developers');
+      navigate('/team');
     } catch {
       alert('Delete failed');
     }
@@ -94,7 +94,7 @@ export default function DeveloperProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <Link to="/developers" className="text-blue-600 text-sm hover:underline">← Back to Developers</Link>
+      <Link to="/team" className="text-blue-600 text-sm hover:underline">← Back to Team</Link>
 
       {/* Header with edit/delete */}
       <div className="flex justify-between items-start mt-2">

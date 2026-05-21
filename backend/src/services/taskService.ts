@@ -61,8 +61,21 @@ async function validateAssignment(
 }
 
 // --- GET /api/tasks (flat list with depth) ---
-export async function getAllTasksFlat() {
-  const tasks = await prisma.task.findMany({ include: taskInclude });
+export interface TaskFilters {
+  projectId?: string;
+  status?: string;
+  developerId?: string;
+}
+
+export async function getAllTasksFlat(filters?: TaskFilters) {
+  const where: Record<string, unknown> = {};
+  if (filters?.projectId) where.projectId = filters.projectId;
+  if (filters?.status) where.status = filters.status;
+  if (filters?.developerId) {
+    where.developerId = filters.developerId === 'unassigned' ? null : filters.developerId;
+  }
+
+  const tasks = await prisma.task.findMany({ where, include: taskInclude });
   return computeFlatListWithDepth(tasks);
 }
 

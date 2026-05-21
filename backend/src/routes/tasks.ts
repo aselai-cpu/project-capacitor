@@ -8,8 +8,13 @@ import { logger } from '../lib/logger.js';
 
 const router = Router();
 
-router.get('/', async (_, res) => {
-  const tasks = await taskService.getAllTasksFlat();
+router.get('/', async (req, res) => {
+  const { projectId, status, developerId } = req.query as Record<string, string | undefined>;
+  const filters: taskService.TaskFilters = {};
+  if (projectId) filters.projectId = projectId;
+  if (status) filters.status = status;
+  if (developerId) filters.developerId = developerId;
+  const tasks = await taskService.getAllTasksFlat(filters);
   res.json(tasks);
 });
 

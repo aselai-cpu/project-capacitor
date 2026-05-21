@@ -129,7 +129,13 @@ export default function TaskListPage() {
               ))}
             </tbody>
           </table>
-          {tasks.length === 0 && <p className="text-gray-500 mt-4">No tasks match the current filters.</p>}
+          {tasks.length === 0 && (
+            <p className="text-gray-500 mt-4">
+              {projectId || status || developerId
+                ? 'No tasks match the current filters.'
+                : 'No tasks yet. Create one to get started.'}
+            </p>
+          )}
         </>
       )}
     </div>

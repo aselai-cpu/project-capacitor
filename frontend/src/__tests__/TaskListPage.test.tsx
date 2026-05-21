@@ -42,7 +42,7 @@ describe('TaskListPage', () => {
     vi.mocked(fetchProjects).mockResolvedValue([]);
     render(<MemoryRouter><TaskListPage /></MemoryRouter>);
     await waitFor(() => {
-      expect(screen.getByText(/No tasks match the current filters/i)).toBeInTheDocument();
+      expect(screen.getByText(/No tasks yet\. Create one to get started\./i)).toBeInTheDocument();
     });
   });
 

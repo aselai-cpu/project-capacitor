@@ -110,24 +110,33 @@ The lesson: **shipping fast creates type debt.** Every `any` type and every miss
 
 Adding Pino, OpenTelemetry, and Langfuse revealed an architectural decision that wasn't in the plan: **how should logs reach the storage backend?**
 
-The first attempt used `pino-loki` — a Pino transport that pushes logs directly from the app to Loki's HTTP API. This worked, but the user correctly pointed out that the industry-standard architecture routes everything through the OpenTelemetry Collector:
+The first attempt used `pino-loki` — a Pino transport that pushes logs directly from the app to Loki's HTTP API. This worked, but the question arose: shouldn't everything route through the OpenTelemetry Collector?
+
+We tried three approaches in sequence:
+
+**Attempt 1: OTel Collector with Loki exporter.** Added a logs pipeline to the collector config with the `loki` exporter. Traces flowed to Tempo correctly, but logs were silently dropped. The collector's debug output showed `ResourceLog #0` records arriving, but the Loki exporter never delivered them. Switching to `otlphttp/loki` (pointing to Loki's native OTLP endpoint) didn't help either. Enabling `allow_structured_metadata` in Loki's config allowed direct OTLP pushes from `curl` to work (204 response), but the collector→Loki pipeline remained broken.
+
+**Attempt 2: `pino-opentelemetry-transport` direct to Loki.** Bypassed the collector entirely and pointed the transport at Loki's OTLP endpoint (`http://loki:3100/otlp/v1/logs`). The transport didn't support the `logRecordExporterOptions.url` override reliably, and logs still didn't arrive.
+
+**Attempt 3: `pino-loki` direct push.** Went back to the original approach. It worked immediately and reliably — every Pino log line pushed to Loki's native push API within seconds.
+
+The final architecture is pragmatic, not pure:
 
 ```
-App → OTel Collector → Tempo (traces) + Loki (logs)
+Traces: App → Tempo :4318 (OTLP direct)
+Logs:   App → Loki :3100 (pino-loki push)
+UI:     Grafana :3001
 ```
 
-Not:
+The OTel Collector was removed entirely — it added a container, a config file, and debugging complexity for zero additional value at this scale. Tempo accepts OTLP directly. Loki accepts push API directly. For a take-home test with one backend service, the collector is unnecessary middleware.
 
-```
-App → OTel Collector → Tempo (traces)
-App → Loki (logs directly)
-```
+The lesson: **the "industry standard" architecture (App → Collector → Backends) exists for multi-service, multi-backend production systems.** For a single-service demo, sending directly to backends is simpler, more debuggable, and equally correct. Don't add infrastructure to impress — add it when it solves a real problem.
 
-The fix used `@opentelemetry/instrumentation-pino`, which automatically bridges Pino log calls into OpenTelemetry log records. These flow through the same OTLP pipeline as traces, to the same collector, which routes them to the appropriate backend. One pipeline, one exporter endpoint, clean separation.
-
-Two gotchas surfaced:
-- The default `otel/opentelemetry-collector` Docker image doesn't include the Loki exporter. You need `otel/opentelemetry-collector-contrib`.
+Additional gotchas:
+- `@opentelemetry/instrumentation-pino` does NOT emit OTel LogRecords — it only injects trace context (`traceId`, `spanId`) into Pino log lines. The name is misleading.
+- `pino-opentelemetry-transport` exists but had reliability issues with Loki's OTLP endpoint.
 - Grafana's default port (3000) conflicted with our frontend. Using 3001 was trivial but had to be remembered across docker-compose, README, and CLAUDE.md.
+- The `otel/opentelemetry-collector` base image doesn't include the Loki exporter — you need `otel/opentelemetry-collector-contrib`. But we removed the collector entirely.
 
 ### Multi-Provider LLM: From Gemini-Only to Auto-Detection
 

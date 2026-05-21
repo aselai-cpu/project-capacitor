@@ -1,4 +1,4 @@
-import type { Task, Developer, Skill, Project, GeneratedStory, ExtractedSkill } from './types';
+import type { Task, Developer, Skill, Project, GeneratedStory, ExtractedSkill, DashboardData, ScoredTask, ClassifyResult } from './types';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -156,3 +156,31 @@ export const updateDeveloper = (id: string, body: UpdateDeveloperPayload): Promi
 export const deleteDeveloper = (id: string): Promise<void> =>
   fetch(`${API}/api/developers/${id}`, { method: 'DELETE' })
     .then(r => handleResponse<void>(r));
+
+// --- Dashboard API ---
+
+export const fetchDashboard = (): Promise<DashboardData> =>
+  fetch(`${API}/api/dashboard`).then(r => handleResponse<DashboardData>(r));
+
+// --- Allocation API ---
+
+export const fetchAllocationScores = (projectId?: string): Promise<ScoredTask[]> => {
+  const qs = projectId ? `?projectId=${projectId}` : '';
+  return fetch(`${API}/api/allocate/scores${qs}`).then(r => handleResponse<ScoredTask[]>(r));
+};
+
+export const fetchAllocationReason = (taskId: string, developerId: string): Promise<{ reason: string }> =>
+  fetch(`${API}/api/allocate/reason`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ taskId, developerId }),
+  }).then(r => handleResponse<{ reason: string }>(r));
+
+// --- Skill Classification Preview ---
+
+export const classifyTaskSkills = (title: string, acceptanceCriteria?: string): Promise<ClassifyResult> =>
+  fetch(`${API}/api/tasks/classify-skills`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, acceptanceCriteria }),
+  }).then(r => handleResponse<ClassifyResult>(r));

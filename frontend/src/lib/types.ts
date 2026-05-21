@@ -62,3 +62,33 @@ export interface TaskFilters {
   status?: string;
   developerId?: string;
 }
+
+export interface DashboardData {
+  activeProjects: number;
+  unassignedTasks: number;
+  teamMembers: number;
+  inProgressTasks: number;
+  projects: Array<{ id: string; name: string; unassignedCount: number }>;
+  workload: Array<{ developerId: string; developerName: string; taskCount: number }>;
+}
+
+export interface TaskScore {
+  developerId: string;
+  developerName: string;
+  matchPercent: number;
+  missingSkills: string[];
+  currentTaskCount: number;
+  isTopPick: boolean;
+}
+
+export interface ScoredTask {
+  taskId: string;
+  taskTitle: string;
+  taskSkills: string[];
+  scores: TaskScore[];
+}
+
+export interface ClassifyResult {
+  skillIds: string[];
+  skillNames: string[];
+}

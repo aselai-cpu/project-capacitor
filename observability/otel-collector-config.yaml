@@ -11,12 +11,23 @@ processors:
     timeout: 5s
     send_batch_size: 1024
 
+  # Add resource attributes to logs for Loki label extraction
+  resource:
+    attributes:
+      - key: service.name
+        value: capacitor-backend
+        action: upsert
+
 exporters:
   # Forward traces to Tempo
   otlp/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
+
+  # Forward logs to Loki
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
 
   # Debug output for development
   debug:
@@ -28,3 +39,7 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [otlp/tempo, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [loki, debug]

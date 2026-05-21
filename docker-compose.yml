@@ -33,9 +33,8 @@ services:
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-}
-      # Observability — traces to OTel Collector, logs to Loki
+      # Observability — traces + logs to OTel Collector (routes to Tempo + Loki)
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-      LOKI_HOST: http://loki:3100
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_SERVICE_NAME: capacitor-backend
     depends_on:
@@ -53,7 +52,7 @@ services:
 
   # OpenTelemetry Collector — receives traces from app, forwards to Tempo
   otel-collector:
-    image: otel/opentelemetry-collector:latest
+    image: otel/opentelemetry-collector-contrib:latest
     restart: unless-stopped
     volumes:
       - ./observability/otel-collector-config.yaml:/etc/otelcol/config.yaml

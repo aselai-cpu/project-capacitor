@@ -1,14 +1,24 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { ConsoleSpanExporter, BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
+import { BatchLogRecordProcessor, ConsoleLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-node';
 
-const traceExporter = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
-  ? new OTLPTraceExporter({ url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT })
+const hasOtlpEndpoint = !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+
+// --- Trace exporters ---
+const traceExporter = hasOtlpEndpoint
+  ? new OTLPTraceExporter()
   : new ConsoleSpanExporter();
 
-// Optional Langfuse span processor — only active when keys are configured
+// --- Log exporters ---
+const logRecordProcessor = hasOtlpEndpoint
+  ? new BatchLogRecordProcessor(new OTLPLogExporter())
+  : new SimpleLogRecordProcessor(new ConsoleLogRecordExporter());
+
+// --- Optional Langfuse span processor ---
 const spanProcessors: SpanProcessor[] = [];
 if (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY) {
   const { LangfuseExporter } = await import('langfuse-vercel');
@@ -26,10 +36,13 @@ if (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY) {
 const sdk = new NodeSDK({
   serviceName: process.env.OTEL_SERVICE_NAME || 'capacitor-backend',
   traceExporter,
+  logRecordProcessor,
   ...(spanProcessors.length > 0 && { spanProcessors }),
   instrumentations: [
     getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-fs': { enabled: false }, // too noisy
+      '@opentelemetry/instrumentation-fs': { enabled: false },
+      // Auto-instrument Pino to bridge logs to OTel
+      '@opentelemetry/instrumentation-pino': { enabled: true },
     }),
   ],
 });

@@ -259,7 +259,7 @@ export async function classifySkills(title: string, availableSkills?: string[]):
     const skillNames = availableSkills || ['Frontend', 'Backend'];
 
     const dynamicSchema = z.object({
-      skills: z.array(z.string()),
+      skills: z.array(z.enum(skillNames as [string, ...string[]])),
     });
 
     const { object } = await generateObject({

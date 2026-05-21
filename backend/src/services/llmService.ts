@@ -118,6 +118,99 @@ Return the developer's id and a brief reason (1 sentence).`,
   }
 }
 
+// --- Project enrichment ---
+
+const projectEnrichSchema = z.object({
+  description: z.string(),
+  techStack: z.array(z.string()),
+  architecture: z.string(),
+  domain: z.string(),
+  requirements: z.string(),
+  constraints: z.string(),
+  stakeholders: z.string(),
+});
+
+export interface ProjectContext {
+  name: string;
+  description?: string;
+}
+
+export async function enrichProject(project: ProjectContext) {
+  const model = await getModel();
+  const { object } = await generateObject({
+    model,
+    schema: projectEnrichSchema,
+    prompt: `You are a senior software architect. Given a project name and optional description, generate a comprehensive project specification.
+
+Project name: "${project.name}"
+${project.description ? `Description: "${project.description}"` : 'No description provided.'}
+
+Generate:
+- description: A clear 2-3 sentence project description (expand if brief, generate if missing)
+- techStack: Array of specific technologies (e.g., ["React", "Node.js", "PostgreSQL", "Docker"])
+- architecture: High-level architecture description (1-2 paragraphs covering layers, patterns, and key design decisions)
+- domain: Business domain and context (1 paragraph explaining the problem space)
+- requirements: Key functional requirements as a bulleted list (use newlines, start each with "- ")
+- constraints: Technical and business constraints as a bulleted list
+- stakeholders: Key stakeholders and their roles as a bulleted list`,
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: { feature: 'project-enrich', projectName: project.name },
+    },
+  });
+  return object;
+}
+
+// --- User story generation ---
+
+const userStorySchema = z.object({
+  stories: z.array(z.object({
+    title: z.string(),
+    acceptanceCriteria: z.string(),
+  })),
+});
+
+export interface FullProjectContext {
+  name: string;
+  description?: string;
+  techStack: string[];
+  architecture?: string;
+  domain?: string;
+  requirements?: string;
+}
+
+export async function generateUserStories(project: FullProjectContext) {
+  const model = await getModel();
+  const { object } = await generateObject({
+    model,
+    schema: userStorySchema,
+    prompt: `You are a product owner creating user stories for a software project.
+
+Project: "${project.name}"
+Description: ${project.description || 'N/A'}
+Tech Stack: ${project.techStack.join(', ') || 'N/A'}
+Architecture: ${project.architecture || 'N/A'}
+Domain: ${project.domain || 'N/A'}
+Requirements: ${project.requirements || 'N/A'}
+
+Generate exactly 10 user stories. Each story must have:
+- title: In the format "As a [role], I want [feature] so that [benefit]"
+- acceptanceCriteria: In Gherkin format with Given/When/Then. Include 2-3 scenarios per story.
+
+Example acceptance criteria format:
+Given I am on the login page
+When I enter valid credentials
+Then I should be redirected to the dashboard
+
+Stories should cover different aspects: core features, edge cases, admin, user management, performance, security. Be specific and actionable.`,
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: { feature: 'generate-stories', projectName: project.name },
+    },
+  });
+  return object.stories;
+}
+
 // --- Skill classification ---
 
 export async function classifySkills(title: string): Promise<string[]> {

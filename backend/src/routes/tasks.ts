@@ -5,6 +5,8 @@ import { createTaskSchema, updateTaskSchema } from '../types.js';
 import * as taskService from '../services/taskService.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { logger } from '../lib/logger.js';
+import { classifySkills } from '../services/llmService.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
 
@@ -58,5 +60,22 @@ router.delete('/', async (_, res) => {
   await taskService.deleteAllTasks();
   res.json({ deleted: true });
 });
+
+// POST /api/tasks/classify-skills — AI skill classification preview
+router.post('/classify-skills', asyncHandler(async (req, res) => {
+  const { title, acceptanceCriteria } = req.body as { title?: string; acceptanceCriteria?: string };
+  if (!title) { res.status(400).json({ error: 'title is required' }); return; }
+
+  const skills = await prisma.skill.findMany();
+  const availableSkillNames = skills.map(s => s.name);
+  const skillMap = new Map(skills.map(s => [s.name, s.id]));
+
+  const classified = await classifySkills(title, availableSkillNames, acceptanceCriteria);
+
+  res.json({
+    skillIds: classified.map(name => skillMap.get(name)).filter(Boolean),
+    skillNames: classified,
+  });
+}));
 
 export default router;

@@ -7,6 +7,7 @@ import developersRouter from './routes/developers.js';
 import tasksRouter from './routes/tasks.js';
 import projectsRouter from './routes/projects.js';
 import dashboardRouter from './routes/dashboard.js';
+import allocateRouter from './routes/allocate.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +32,7 @@ app.use('/api/developers', developersRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/allocate', allocateRouter);
 
 // Global error handler (must be after all routes)
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

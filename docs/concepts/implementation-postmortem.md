@@ -94,6 +94,49 @@ The implementation used a flat table with CSS `padding-left` indentation and a "
 
 The lesson: in a time-boxed evaluation, a clean simple solution that works beats an ambitious complex solution that might be buggy. The Create page's recursive `<TaskFormNode />` is where the evaluators see recursive React skill — the List page doesn't need to repeat it.
 
+## Post-Implementation: Code Quality and Observability
+
+After the initial 12-task implementation, two additional passes reshaped the codebase.
+
+### The Code Quality Review
+
+A typescript-craftsman review found 35+ maintainability issues — `any` types throughout the API layer, silent error swallowing in component handlers, missing loading states, and zero accessibility labels. The most dangerous: `TaskRow` called `updateTask()` with no try-catch, meaning when the cascade guard returned a 400, the `onUpdate()` callback never fired and the UI silently broke.
+
+The fix was a 4-phase refactoring: type safety first (replacing every `any` with proper interfaces), then error handling (`ApiError` class, `asyncHandler` middleware, `response.ok` checks), then SRP (extracting `validateStatusCascade` and `validateAssignment` into testable pure functions with a discriminated union `UpdateResult` return type), and finally UX (loading states, `Promise.all` for parallel fetch, aria-labels).
+
+The lesson: **shipping fast creates type debt.** Every `any` type and every missing try-catch is a bug waiting to happen. The refactoring took roughly the same time as the original implementation of those files — but it was much harder because it required understanding existing behavior before changing it. Writing it correctly the first time would have been cheaper.
+
+### The Observability Stack
+
+Adding Pino, OpenTelemetry, and Langfuse revealed an architectural decision that wasn't in the plan: **how should logs reach the storage backend?**
+
+The first attempt used `pino-loki` — a Pino transport that pushes logs directly from the app to Loki's HTTP API. This worked, but the user correctly pointed out that the industry-standard architecture routes everything through the OpenTelemetry Collector:
+
+```
+App → OTel Collector → Tempo (traces) + Loki (logs)
+```
+
+Not:
+
+```
+App → OTel Collector → Tempo (traces)
+App → Loki (logs directly)
+```
+
+The fix used `@opentelemetry/instrumentation-pino`, which automatically bridges Pino log calls into OpenTelemetry log records. These flow through the same OTLP pipeline as traces, to the same collector, which routes them to the appropriate backend. One pipeline, one exporter endpoint, clean separation.
+
+Two gotchas surfaced:
+- The default `otel/opentelemetry-collector` Docker image doesn't include the Loki exporter. You need `otel/opentelemetry-collector-contrib`.
+- Grafana's default port (3000) conflicted with our frontend. Using 3001 was trivial but had to be remembered across docker-compose, README, and CLAUDE.md.
+
+### Multi-Provider LLM: From Gemini-Only to Auto-Detection
+
+The original implementation hardcoded `@ai-sdk/google` with `GOOGLE_GENERATIVE_AI_API_KEY`. The README literally said "Set your Gemini API key." This was the plan (ADR-004 said "single adapter"), but it created an unnecessary barrier — evaluators might have OpenAI or Anthropic keys instead.
+
+The fix was an auto-detection pattern: the `llmService.ts` checks which API key environment variable is set and instantiates the corresponding provider. Four providers are supported (Google, OpenAI, Anthropic, Moonshot Kimi) with sensible default models. `LLM_PROVIDER` and `LLM_MODEL` env vars allow explicit overrides.
+
+This also exposed a documentation consistency problem: after shipping multi-provider support, seven files still referenced the old Gemini-only approach (final-decisions.md, ADR-004, ADR-001, the spec, playwright.config.ts, .env, CLAUDE.md). A grep-and-fix pass was needed to align documentation with reality. The lesson: **when the implementation outgrows the plan, update every document that referenced the plan, not just the code.**
+
 ## The Meta-Lesson: Plans Are Hypotheses
 
 The most important lesson isn't about any specific technology. It's that **an implementation plan is a hypothesis about what will work, not a guarantee.** The plan assumed Prisma v5 patterns, Node 20 compatibility, and `npm ci` in Docker. All three assumptions were wrong.

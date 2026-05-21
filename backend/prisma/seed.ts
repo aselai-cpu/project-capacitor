@@ -10,28 +10,38 @@ async function main() {
   await prisma.developer.deleteMany();
   await prisma.skill.deleteMany();
 
-  // Create skills
-  const frontend = await prisma.skill.create({ data: { name: 'Frontend' } });
-  const backend = await prisma.skill.create({ data: { name: 'Backend' } });
+  // Create real tech skills (flat — no hierarchy)
+  const skillNames = [
+    'React', 'Angular', 'Vue', 'TypeScript', 'Node.js',
+    'Python', 'Java', 'Go', 'Rust', 'PostgreSQL',
+    'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS',
+    'GraphQL',
+  ];
 
-  // Create developers with skills
+  const skills: Record<string, string> = {};
+  for (const name of skillNames) {
+    const skill = await prisma.skill.create({ data: { name } });
+    skills[name] = skill.id;
+  }
+
+  // Create developers with realistic skill sets
   const devs = [
-    { name: 'Alice', skills: [frontend.id] },
-    { name: 'Bob', skills: [backend.id] },
-    { name: 'Carol', skills: [frontend.id, backend.id] },
-    { name: 'Dave', skills: [backend.id] },
+    { name: 'Alice', skills: ['React', 'TypeScript', 'Node.js', 'GraphQL'] },
+    { name: 'Bob', skills: ['Java', 'PostgreSQL', 'Docker', 'Kubernetes'] },
+    { name: 'Carol', skills: ['React', 'TypeScript', 'Python', 'AWS', 'Docker'] },
+    { name: 'Dave', skills: ['Go', 'PostgreSQL', 'Redis', 'Kubernetes'] },
   ];
 
   for (const dev of devs) {
     await prisma.developer.create({
       data: {
         name: dev.name,
-        skills: { connect: dev.skills.map(id => ({ id })) },
+        skills: { connect: dev.skills.map(name => ({ id: skills[name] })) },
       },
     });
   }
 
-  console.log('Seed complete: 2 skills, 4 developers');
+  console.log(`Seed complete: ${skillNames.length} skills, ${devs.length} developers`);
 }
 
 main()

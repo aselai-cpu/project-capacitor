@@ -58,3 +58,27 @@ export const updateProjectSchema = z.object({
   constraints: z.string().optional(),
   stakeholders: z.string().optional(),
 });
+
+// --- Developer schemas ---
+
+export interface CreateDeveloperInput {
+  name: string;
+  skillIds?: string[];
+}
+
+export const createDeveloperSchema = z.object({
+  name: z.string().min(1),
+  skillIds: z.array(z.string().uuid()).optional().default([]),
+});
+
+export interface UpdateDeveloperInput {
+  name?: string;
+  bio?: string;
+  skillIds?: string[];
+}
+
+export const updateDeveloperSchema = z.object({
+  name: z.string().min(1).optional(),
+  bio: z.string().optional(),
+  skillIds: z.array(z.string().uuid()).optional(),
+});

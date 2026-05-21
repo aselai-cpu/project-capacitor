@@ -18,29 +18,28 @@ const PROMPT = (title: string) =>
 
 /**
  * Auto-detect LLM provider from environment variables.
- * Priority: explicit LLM_PROVIDER env var > auto-detect from API key presence.
+ * Uses dynamic import() for ESM compatibility.
  */
-function getModel(): LanguageModel {
+async function getModel(): Promise<LanguageModel> {
   const explicit = process.env.LLM_PROVIDER;
 
   if (explicit === 'openai' || (!explicit && process.env.OPENAI_API_KEY)) {
-    // Dynamic import is not needed — Vercel AI SDK reads env vars automatically
-    const { openai } = require('@ai-sdk/openai');
+    const { openai } = await import('@ai-sdk/openai');
     return openai(process.env.LLM_MODEL || 'gpt-4o-mini');
   }
 
   if (explicit === 'anthropic' || (!explicit && process.env.ANTHROPIC_API_KEY)) {
-    const { anthropic } = require('@ai-sdk/anthropic');
+    const { anthropic } = await import('@ai-sdk/anthropic');
     return anthropic(process.env.LLM_MODEL || 'claude-haiku-4-5-20251001');
   }
 
   if (explicit === 'moonshot' || (!explicit && process.env.MOONSHOT_API_KEY)) {
-    const { moonshotai } = require('@ai-sdk/moonshotai');
+    const { moonshotai } = await import('@ai-sdk/moonshotai');
     return moonshotai(process.env.LLM_MODEL || 'kimi-k2.5');
   }
 
   // Default: Google Gemini
-  const { google } = require('@ai-sdk/google');
+  const { google } = await import('@ai-sdk/google');
   return google(process.env.LLM_MODEL || 'gemini-2.5-flash');
 }
 
@@ -56,7 +55,7 @@ export function getActiveProvider(): string {
 
 export async function classifySkills(title: string): Promise<string[]> {
   try {
-    const model = getModel();
+    const model = await getModel();
     const { object } = await generateObject({
       model,
       schema: skillSchema,

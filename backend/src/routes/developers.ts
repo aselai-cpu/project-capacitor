@@ -5,6 +5,8 @@ import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { extractSkillsFromCV } from '../services/llmService.js';
 import { logger } from '../lib/logger.js';
+import { validate } from '../middleware/validate.js';
+import { createDeveloperSchema, updateDeveloperSchema } from '../types.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -26,6 +28,51 @@ router.get('/:id', asyncHandler(async (req, res) => {
     return;
   }
   res.json(developer);
+}));
+
+// POST /api/developers — Create a new developer
+router.post('/', validate(createDeveloperSchema), asyncHandler(async (req, res) => {
+  const { name, skillIds } = req.body as { name: string; skillIds: string[] };
+  const developer = await prisma.developer.create({
+    data: {
+      name,
+      ...(skillIds.length > 0 && { skills: { connect: skillIds.map(id => ({ id })) } }),
+    },
+    include: { skills: { select: { id: true, name: true } } },
+  });
+  logger.info({ developerId: developer.id }, 'Developer created');
+  res.status(201).json(developer);
+}));
+
+// PATCH /api/developers/:id — Update developer name/bio/skills
+router.patch('/:id', validate(updateDeveloperSchema), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const existing = await prisma.developer.findUnique({ where: { id: id as string } });
+  if (!existing) { res.status(404).json({ error: 'Developer not found' }); return; }
+
+  const { name, bio, skillIds } = req.body as { name?: string; bio?: string; skillIds?: string[] };
+  const developer = await prisma.developer.update({
+    where: { id: id as string },
+    data: {
+      ...(name !== undefined && { name }),
+      ...(bio !== undefined && { bio }),
+      ...(skillIds !== undefined && { skills: { set: skillIds.map(id => ({ id })) } }),
+    },
+    include: { skills: { select: { id: true, name: true } } },
+  });
+  logger.info({ developerId: id }, 'Developer updated');
+  res.json(developer);
+}));
+
+// DELETE /api/developers/:id — Delete a developer
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const existing = await prisma.developer.findUnique({ where: { id: id as string } });
+  if (!existing) { res.status(404).json({ error: 'Developer not found' }); return; }
+
+  await prisma.developer.delete({ where: { id: id as string } });
+  logger.info({ developerId: id }, 'Developer deleted');
+  res.json({ deleted: true });
 }));
 
 // POST /api/developers/:id/upload-cv — Upload PDF CV and extract skills

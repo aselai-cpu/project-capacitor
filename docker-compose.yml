@@ -34,8 +34,9 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-}
       LLM_TIMEOUT_MS: "15000"
-      # Observability — traces + logs to OTel Collector (routes to Tempo + Loki)
+      # Observability — traces to OTel Collector (→ Tempo), logs direct to Loki
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      LOKI_OTLP_ENDPOINT: http://loki:3100/otlp/v1/logs
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_SERVICE_NAME: capacitor-backend
     depends_on:

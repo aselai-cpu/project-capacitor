@@ -1,25 +1,32 @@
 import pino from 'pino';
 
 const isDev = process.env.NODE_ENV !== 'production';
-const hasOtlpEndpoint = !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+// Logs go directly to Loki OTLP endpoint (separate from trace collector)
+const lokiEndpoint = process.env.LOKI_OTLP_ENDPOINT;
+const hasLogEndpoint = !!lokiEndpoint;
 
 function buildTransport() {
   const targets: pino.TransportTargetOptions[] = [];
 
-  if (hasOtlpEndpoint) {
-    // Ship logs to OTel Collector via OTLP (→ Loki)
+  if (hasLogEndpoint) {
+    // Ship logs directly to Loki's native OTLP endpoint
     targets.push({
       target: 'pino-opentelemetry-transport',
       options: {
+        loggerName: 'capacitor-backend',
         resourceAttributes: {
           'service.name': process.env.OTEL_SERVICE_NAME || 'capacitor-backend',
+        },
+        // Override the default OTLP endpoint to point to Loki directly
+        logRecordExporterOptions: {
+          url: lokiEndpoint,
         },
       },
       level: 'info',
     });
   }
 
-  if (isDev && !hasOtlpEndpoint) {
+  if (isDev && !hasLogEndpoint) {
     // Dev: pretty console output
     targets.push({
       target: 'pino-pretty',

@@ -62,7 +62,7 @@ router.post('/:id/upload-cv', upload.single('cv'), asyncHandler(async (req, res)
     data: {
       cvText,
       cvFileName: req.file.originalname,
-      bio: extracted.bio || undefined,
+      bio: extracted.bio || null,
       skills: { set: dbSkills.map(s => ({ id: s.id })) },
     },
     include: { skills: { select: { id: true, name: true } } },
@@ -102,7 +102,7 @@ router.post('/:id/extract-skills', asyncHandler(async (req, res) => {
     where: { id: req.params['id'] as string },
     data: {
       cvText,
-      bio: extracted.bio || undefined,
+      bio: extracted.bio || null,
       skills: { set: dbSkills.map(s => ({ id: s.id })) },
     },
     include: { skills: { select: { id: true, name: true } } },

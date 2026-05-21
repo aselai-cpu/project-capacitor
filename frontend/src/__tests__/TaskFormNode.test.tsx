@@ -36,8 +36,10 @@ describe('TaskFormNode', () => {
     expect(input).toBeInTheDocument();
   });
 
-  it('renders skill buttons for each skill', () => {
+  it('renders skill buttons for each skill', async () => {
+    const user = userEvent.setup();
     render(<TaskFormNode node={makeNode()} skills={mockSkills} depth={0} onUpdate={onUpdate} />);
+    await user.click(screen.getByRole('button', { name: 'Refine skills manually' }));
     expect(screen.getByRole('button', { name: 'Toggle Frontend skill' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Toggle Backend skill' })).toBeInTheDocument();
   });
@@ -57,6 +59,7 @@ describe('TaskFormNode', () => {
   it('calls onUpdate when a skill button is clicked', async () => {
     const user = userEvent.setup();
     render(<TaskFormNode node={makeNode()} skills={mockSkills} depth={0} onUpdate={onUpdate} />);
+    await user.click(screen.getByRole('button', { name: 'Refine skills manually' }));
     await user.click(screen.getByRole('button', { name: 'Toggle Frontend skill' }));
     expect(onUpdate).toHaveBeenCalledOnce();
     const [calledId, updaterFn] = onUpdate.mock.calls[0];

@@ -19,7 +19,7 @@ describe('DeveloperListPage', () => {
     vi.mocked(fetchSkills).mockResolvedValue([]);
     render(<MemoryRouter><DeveloperListPage /></MemoryRouter>);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /create developer/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /add team member/i })).toBeInTheDocument();
     });
   });
 
@@ -31,8 +31,8 @@ describe('DeveloperListPage', () => {
     const user = userEvent.setup();
 
     render(<MemoryRouter><DeveloperListPage /></MemoryRouter>);
-    await waitFor(() => screen.getByRole('button', { name: /create developer/i }));
-    await user.click(screen.getByRole('button', { name: /create developer/i }));
+    await waitFor(() => screen.getByRole('button', { name: /add team member/i }));
+    await user.click(screen.getByRole('button', { name: /add team member/i }));
     await user.type(screen.getByPlaceholderText(/developer name/i), 'Eve');
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 

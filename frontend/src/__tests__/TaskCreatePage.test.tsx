@@ -52,11 +52,12 @@ describe('TaskCreatePage', () => {
   });
 
   it('renders skill buttons after fetch', async () => {
+    const user = userEvent.setup();
     renderPage();
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Toggle Frontend skill' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Toggle Backend skill' })).toBeInTheDocument();
-    });
+    await waitFor(() => screen.getByRole('button', { name: 'Refine skills manually' }));
+    await user.click(screen.getByRole('button', { name: 'Refine skills manually' }));
+    expect(screen.getByRole('button', { name: 'Toggle Frontend skill' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle Backend skill' })).toBeInTheDocument();
   });
 
   it('Save button is disabled when title is empty', async () => {

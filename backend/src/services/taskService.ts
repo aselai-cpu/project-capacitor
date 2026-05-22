@@ -177,7 +177,7 @@ export async function deleteAllTasks() {
 // --- PATCH /api/tasks/:id (update with guards) ---
 export async function updateTask(
   id: string,
-  data: { status?: string; developerId?: string | null },
+  data: { status?: string; developerId?: string | null; storyPoints?: number },
 ): Promise<UpdateResult> {
   const task = await prisma.task.findUnique({
     where: { id },
@@ -197,9 +197,10 @@ export async function updateTask(
     if (assignmentError) return assignmentError;
   }
 
-  const updateData: { status?: TaskStatus; developerId?: string | null } = {};
+  const updateData: { status?: TaskStatus; developerId?: string | null; storyPoints?: number } = {};
   if (data.status) updateData.status = data.status as TaskStatus;
   if (data.developerId !== undefined) updateData.developerId = data.developerId;
+  if (data.storyPoints !== undefined) updateData.storyPoints = data.storyPoints;
 
   const updated = await prisma.task.update({
     where: { id },

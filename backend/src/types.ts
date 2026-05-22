@@ -8,6 +8,8 @@ export interface CreateTaskInput {
   subtasks: CreateTaskInput[];
   projectId?: string | null;
   acceptanceCriteria?: string;
+  description?: string;
+  storyPoints?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,11 +20,17 @@ export const createTaskSchema: z.ZodType<CreateTaskInput> = z.object({
   subtasks: z.lazy(() => z.array(createTaskSchema)).optional().default([]),
   projectId: z.string().uuid().nullable().optional().default(null),
   acceptanceCriteria: z.string().optional(),
+  description: z.string().optional(),
+  storyPoints: z.number().int().optional(),
 }) as unknown as z.ZodType<CreateTaskInput>;
 
 export const updateTaskSchema = z.object({
   status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
   developerId: z.string().uuid().nullable().optional(),
+  storyPoints: z.number().int().refine(
+    n => [1, 2, 3, 5, 8, 13, 21].includes(n),
+    'Must be a Fibonacci number (1, 2, 3, 5, 8, 13, 21)'
+  ).optional(),
 });
 
 // --- Project schemas ---

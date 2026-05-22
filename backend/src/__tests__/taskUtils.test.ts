@@ -17,6 +17,8 @@ function makeTask(overrides: Record<string, unknown>) {
     developerId: null,
     projectId: null,
     acceptanceCriteria: null,
+    description: null,
+    storyPoints: null,
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),
     skills: [],

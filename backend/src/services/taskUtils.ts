@@ -9,6 +9,8 @@ export interface TaskWithRelations {
   developerId: string | null;
   projectId: string | null;
   acceptanceCriteria: string | null;
+  description: string | null;
+  storyPoints: number | null;
   createdAt: Date;
   updatedAt: Date;
   skills: { id: string; name: string }[];
@@ -61,6 +63,8 @@ export function toPrismaCreate(node: CreateTaskInput, isRoot = true): any {
     ...(isRoot && node.parentId ? { parent: { connect: { id: node.parentId } } } : {}),
     ...(isRoot && node.projectId ? { project: { connect: { id: node.projectId } } } : {}),
     ...(node.acceptanceCriteria ? { acceptanceCriteria: node.acceptanceCriteria } : {}),
+    ...(node.description ? { description: node.description } : {}),
+    ...(node.storyPoints != null ? { storyPoints: node.storyPoints } : {}),
     skills: node.skillIds.length > 0
       ? { connect: node.skillIds.map(id => ({ id })) }
       : undefined,

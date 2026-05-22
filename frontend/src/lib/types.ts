@@ -119,3 +119,18 @@ export interface GeneratedTask {
   storyPoints: number;
   skillNames: string[];
 }
+
+export interface TaskTree {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  storyPoints: number | null;
+  acceptanceCriteria: string | null;
+  skills: Skill[];
+  developer: { id: string; name: string } | null;
+  project: { id: string; name: string } | null;
+  parentId: string | null;
+  createdAt: string;
+  subtasks: TaskTree[];
+}

@@ -1,4 +1,4 @@
-import type { Task, Developer, Skill, Project, GeneratedStory, ExtractedSkill, DashboardData, ScoredTask, ClassifyResult, ProjectTasksPage, GeneratedTask } from './types';
+import type { Task, Developer, Skill, Project, GeneratedStory, ExtractedSkill, DashboardData, ScoredTask, ClassifyResult, ProjectTasksPage, GeneratedTask, TaskTree } from './types';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -206,6 +206,22 @@ export const fetchProjectTasks = (
 
 export const generateTasksFromHint = (projectId: string, hint: string): Promise<{ tasks: GeneratedTask[] }> =>
   fetch(`${API}/api/projects/${projectId}/generate-tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hint }),
+  }).then(r => handleResponse<{ tasks: GeneratedTask[] }>(r));
+
+// --- Task Detail ---
+
+export const fetchTask = (id: string): Promise<TaskTree> =>
+  fetch(`${API}/api/tasks/${id}`).then(r => handleResponse<TaskTree>(r));
+
+export const deleteTask = (id: string): Promise<{ deleted: boolean }> =>
+  fetch(`${API}/api/tasks/${id}`, { method: 'DELETE' })
+    .then(r => handleResponse<{ deleted: boolean }>(r));
+
+export const generateSubtasks = (taskId: string, hint: string): Promise<{ tasks: GeneratedTask[] }> =>
+  fetch(`${API}/api/tasks/${taskId}/generate-subtasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ hint }),

@@ -18,8 +18,11 @@ const logRecordProcessor = hasOtlpEndpoint
   ? new BatchLogRecordProcessor(new OTLPLogExporter())
   : new SimpleLogRecordProcessor(new ConsoleLogRecordExporter());
 
-// --- Optional Langfuse span processor ---
-const spanProcessors: SpanProcessor[] = [];
+// --- Span processors: always include trace exporter, optionally add Langfuse ---
+const spanProcessors: SpanProcessor[] = [
+  new BatchSpanProcessor(traceExporter),
+];
+
 if (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY) {
   const { LangfuseExporter } = await import('langfuse-vercel');
   spanProcessors.push(
@@ -28,6 +31,7 @@ if (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY) {
         publicKey: process.env.LANGFUSE_PUBLIC_KEY,
         secretKey: process.env.LANGFUSE_SECRET_KEY,
         ...(process.env.LANGFUSE_BASEURL && { baseUrl: process.env.LANGFUSE_BASEURL }),
+        debug: false,
       }),
     ),
   );
@@ -35,9 +39,8 @@ if (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY) {
 
 const sdk = new NodeSDK({
   serviceName: process.env.OTEL_SERVICE_NAME || 'capacitor-backend',
-  traceExporter,
   logRecordProcessor,
-  ...(spanProcessors.length > 0 && { spanProcessors }),
+  spanProcessors,
   instrumentations: [
     getNodeAutoInstrumentations({
       '@opentelemetry/instrumentation-fs': { enabled: false },

@@ -26,6 +26,8 @@ export interface CreateTaskPayload {
   subtasks?: CreateTaskPayload[];
   projectId?: string | null;
   acceptanceCriteria?: string | null;
+  description?: string | null;
+  storyPoints?: number;
 }
 
 export interface UpdateTaskPayload {

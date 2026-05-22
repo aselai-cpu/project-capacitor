@@ -70,11 +70,17 @@ Same pattern as project-level "Generate Tasks" but scoped to one task:
 ## Remove `/tasks/new`
 
 ### What changes:
-- **Remove** the `TaskCreatePage` component and its route from `App.tsx`
-- **Remove** the `TaskFormNode` component (no longer needed)
-- **Project Detail page:** The "+ Create Task" link at the bottom becomes an **inline creation form** — title input + description textarea + "Create" button. Creates a task via `POST /api/tasks` with `projectId`. No skills needed (AI classifies on the server). After creation, refreshes the task list and the PM can click into the new task to manage subtasks.
-- **Task List page:** The "+ Subtask" link per row changes from linking to `/tasks/new?parentId=` to navigating to `/tasks/:id` (the parent task's detail page, where subtask management lives).
-- **NavBar:** "Create Task" link removed from anywhere it appears.
+- **Remove** the following files:
+  - `frontend/src/pages/TaskCreatePage.tsx`
+  - `frontend/src/components/TaskFormNode.tsx`
+  - `frontend/src/utils/treeUtils.ts`
+  - `frontend/src/__tests__/TaskCreatePage.test.tsx`
+  - `frontend/src/__tests__/TaskFormNode.test.tsx`
+  - `frontend/src/__tests__/treeUtils.test.ts`
+- **Remove** the `/tasks/new` route from `App.tsx` and the `TaskCreatePage` import
+- **Project Detail page:** The "+ Create Task" link at the bottom becomes an **inline creation form** — title input + description textarea + "Create" button. Only these 2 fields (title + description). No skills, story points, or acceptance criteria — those are managed on the Task Detail page after creation, or auto-populated by the server-side LLM classification. Creates a task via `POST /api/tasks` with `projectId`. After creation, refreshes the task list and the PM can click into the new task to manage subtasks.
+- **Task List page:** The "Create Task" button in the header is **removed** (tasks are created from Project Detail). The "+ Subtask" link per row changes from linking to `/tasks/new?parentId=` to navigating to `/tasks/:id` (the parent task's detail page, where subtask management lives).
+- **NavBar:** No changes needed — it doesn't have a "Create Task" link.
 
 ### What stays:
 - `POST /api/tasks` endpoint (unchanged — still accepts title, skillIds, parentId, projectId, description, storyPoints, acceptanceCriteria)
@@ -155,22 +161,30 @@ Generate 3-5 granular, workable subtasks. Each subtask should be small enough fo
 - title: clear action ("Implement X", "Create Y", "Configure Z")
 - description: 2-3 sentences of implementation detail
 - acceptanceCriteria: Gherkin format
-- storyPoints: Fibonacci (1, 2, 3, 5, 8)
+- storyPoints: Fibonacci (1, 2, 3, 5, 8, 13, 21)
 - skillNames: from available list
 ```
 
+The `generateSubtasks` function goes in `backend/src/services/llmService.ts` alongside the existing `generateTasks`. The route handler goes in `backend/src/routes/tasks.ts`. On LLM failure, return 502 with `{ error: 'AI subtask generation failed — try again later' }`. Frontend shows an alert on error.
+
 ### Modified: `GET /api/tasks/:id`
 
-The existing endpoint returns a recursive task tree via `buildTree()`. Update to include the new fields (`description`, `storyPoints`) and ensure skills/developer are included at all levels. The current `taskInclude` already selects `skills` and `developer` — verify `description` and `storyPoints` are present in the response (they should be automatically since they're on the model).
+The existing endpoint returns a recursive task tree via `buildTree()`. Update the existing `taskInclude` constant in `taskService.ts` to also include `project`:
 
-Also include the project relation so the Task Detail page can show the project name:
 ```typescript
-const taskDetailInclude = {
+const taskInclude = {
   skills: { select: { id: true, name: true } },
   developer: { select: { id: true, name: true } },
   project: { select: { id: true, name: true } },
 };
 ```
+
+Also update `TaskWithRelations` in `taskUtils.ts` to include:
+```typescript
+  project: { id: string; name: string } | null;
+```
+
+The `description` and `storyPoints` fields are already on the model and will be returned automatically by Prisma — no explicit select needed.
 
 ## Frontend Changes
 
@@ -203,13 +217,10 @@ Note: The existing `/tasks/:id` route doesn't exist yet — currently tasks are 
 ### Modified: `frontend/src/lib/api.ts`
 
 ```typescript
-// New
-deleteTask(id: string): Promise<void>
+// New functions
+deleteTask(id: string): Promise<{ deleted: boolean }>
 generateSubtasks(taskId: string, hint: string): Promise<{ tasks: GeneratedTask[] }>
 fetchTask(id: string): Promise<TaskTree>  // full tree with project info
-
-// Modified
-// Remove: any references to /tasks/new navigation
 ```
 
 ### Modified: `frontend/src/lib/types.ts`
@@ -252,7 +263,7 @@ interface TaskTree {
 Project Detail → click task title → Task Detail (/tasks/:id)
 Task Detail → click subtask title → Subtask Detail (/tasks/:subtaskId)
 Task Detail → "Generate Subtasks" → add subtasks
-Task Detail → "Delete Task" → confirmation → back to project
+Task Detail → "Delete Task" → confirmation → navigate to /projects/:projectId (if task has project) or /tasks (if orphan)
 Task List → click task title → Task Detail
 Task List → delete button → confirmation → refresh list
 ```

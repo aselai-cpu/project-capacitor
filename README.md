@@ -1,6 +1,6 @@
 # Project Capacitor
 
-Project Capacitor is a full-stack Task Assignment application built for the xDigital AI Products Team at HTX. It features skill-constrained developer assignment, recursive subtasks with status cascade rules, and automated LLM-based skill classification.
+Enterprise-grade task assignment platform with AI-powered project kickstart, skill extraction from CVs, workload-balanced developer allocation, and full observability. Built for the xDigital AI Products Team at HTX.
 
 ---
 
@@ -12,38 +12,81 @@ Project Capacitor is a full-stack Task Assignment application built for the xDig
 # 1. Clone the repository
 git clone <repo-url> && cd project-capacitor
 
-# 2. Set your LLM API key (pick ONE — auto-detected)
-echo "GOOGLE_GENERATIVE_AI_API_KEY=your-key" > .env   # Google Gemini (free tier available)
-# OR
-echo "OPENAI_API_KEY=your-key" > .env                  # OpenAI
-# OR
-echo "ANTHROPIC_API_KEY=your-key" > .env               # Anthropic Claude
-# OR
-echo "MOONSHOT_API_KEY=your-key" > .env                # Moonshot Kimi
+# 2. Configure LLM provider — set ONE key in .env (auto-detected)
+cp .env.example .env
+# Edit .env and set one of:
+#   GOOGLE_GENERATIVE_AI_API_KEY=...   (Google Gemini — free tier available)
+#   OPENAI_API_KEY=...                  (OpenAI)
+#   ANTHROPIC_API_KEY=...               (Anthropic Claude)
+#   MOONSHOT_API_KEY=...                (Moonshot Kimi)
 
-# 3. Start the full stack
+# 3. Start the full stack (12 services)
 docker-compose up --build
 
 # 4. Open the app
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:5000/api/health (shows active LLM provider)
+#   Frontend:       http://localhost:3000
+#   Backend API:    http://localhost:5000/api/health
+#   Grafana:        http://localhost:3001
+#   Langfuse:       http://localhost:3002  (admin@capacitor.dev / admin123)
+#   pgAdmin:        http://localhost:5050
 ```
 
-The database is automatically initialized with seed data (4 developers, 2 skills).
+The database is seeded with sample data (developers, skills, projects, tasks).
 
 ---
 
-## System Design
+## Features
+
+### Kickstart — Agentic Project Setup
+Single-page workflow: enter a project description + select team members → AI agent autonomously enriches the project, generates 10-15 tasks with story points, extracts skills from CVs, and assigns developers with workload-balanced allocation. Live progress streamed via SSE.
+
+### Project Management
+Create projects with AI enrichment (generates tech stack, architecture, domain, requirements, constraints). Generate user stories and development tasks from project context with directional hints.
+
+### Task Management
+Recursive subtask trees with unlimited depth. Status cascade guards (can't mark parent "Done" unless all subtasks are "Done"). AI-powered skill classification on task creation. Story point estimation. Inline status and assignee changes.
+
+### Developer Profiles & CV Parsing
+Upload PDF CVs or paste text — AI extracts skills with proficiency levels (beginner/intermediate/advanced/expert), professional bio, and work experience. Skills are auto-created and linked to the developer.
+
+### Allocation Copilot
+Three visualization modes for task-developer assignment:
+- **Matrix View** — Tasks vs developers grid with skill match percentages
+- **Kanban View** — Drag-and-drop assignment with unassigned tasks grouped
+- **Focus View** — Single task focus with ranked developer recommendations
+
+AI-generated reasoning for each assignment. "Top Pick" recommendations based on skill match and workload balance.
+
+### Dashboard
+Project summaries, unassigned task counts, team workload distribution.
+
+---
+
+## Architecture
+
+### C4 Diagrams
+
+PlantUML C4 architecture diagrams in `docs/reference/`:
+
+| Diagram | File | Description |
+|---------|------|-------------|
+| Level 1: Context | `c4-context.puml` | Users, Capacitor system, LLM providers, Langfuse |
+| Level 2: Container | `c4-container.puml` | All 12 Docker services across application, observability, and Langfuse stacks |
+| Level 3: Component | `c4-component.puml` | Backend internals — routes, services, Prisma ORM, instrumentation |
+
+Render with any PlantUML tool (VS Code extension, IntelliJ, or [plantuml.com](https://www.plantuml.com/plantuml)).
+
+### System Design
 
 Three bounded contexts (Domain-Driven Design):
 
-- **Capability Context:** Developers and Skills (static, seeded)
+- **Capability Context:** Developers and Skills
 - **Execution Context:** Tasks with recursive subtask trees (Aggregate Root pattern)
-- **Cognitive Context:** LLM skill classification bridge (transient)
+- **Cognitive Context:** LLM-powered skill classification, project enrichment, task generation, CV parsing, and balanced assignment
 
-Two domain invariants:
+Domain invariants:
 
-- **Capability Superset Rule:** A task can only be assigned to a developer whose skills are a superset of the task's required skills
+- **Skill Compatibility Rule:** A task can only be assigned to a developer with at least one matching skill (adjacent skills permitted)
 - **Hierarchical Status Cascade:** A task can only be marked "Done" if all its subtasks are "Done"
 
 Entity relationships:
@@ -52,93 +95,169 @@ Entity relationships:
 - Task ↔ Skill: many-to-many
 - Task → Developer: many-to-one (optional)
 - Task → Task: self-referencing (subtasks, unbounded depth)
+- Task → Project: many-to-one (optional)
 
 ---
 
-## Tech Stack & Library Justifications
+## Tech Stack
 
 | Layer | Technology | Justification |
 |-------|-----------|---------------|
-| Database | PostgreSQL + Prisma ORM | Type-safe queries, schema-first migrations, native nested writes for recursive subtask trees |
-| Backend | Express + TypeScript + Zod | Industry-standard Node.js framework, Zod provides runtime type validation matching TypeScript types |
-| Frontend | Vite + React 19 + React Router v7 + Tailwind CSS | Fastest SPA build tool, React's component model ideal for recursive subtask forms, Tailwind accelerates styling |
-| LLM | Vercel AI SDK (Google/OpenAI/Anthropic/Moonshot) | Provider-agnostic — auto-detects provider from API key. `generateObject()` with Zod for type-safe structured output |
-| Infrastructure | Docker + docker-compose | Single-command deployment, PostgreSQL healthcheck ensures DB ready before backend starts |
+| Database | PostgreSQL 15 + Prisma ORM | Type-safe queries, schema-first migrations, native nested writes for recursive subtask trees |
+| Backend | Express + TypeScript + Zod | REST API with SSE streaming. Zod provides runtime type validation matching TypeScript types |
+| Frontend | Vite + React 19 + React Router v7 + Tailwind CSS | Fast SPA builds, component model for recursive forms, Tailwind for rapid styling |
+| LLM | Vercel AI SDK (4 providers) | Provider-agnostic — auto-detects from API key. `generateObject()` with Zod for type-safe structured output |
+| Observability | Grafana + Loki + Tempo | Structured logging (pino → Loki), distributed tracing (OTLP → Tempo), unified Grafana dashboards |
+| GenAI Observability | Self-hosted Langfuse v3 | Traces every LLM call with latency, token usage, cost, prompt/response. Full local stack with ClickHouse + Redis + MinIO |
+| Infrastructure | Docker Compose (12 services) | Single-command deployment with health checks and dependency ordering |
+
+### LLM Provider Configuration
+
+| Env var | Provider | Default model |
+|---------|----------|---------------|
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini | gemini-2.5-flash |
+| `OPENAI_API_KEY` | OpenAI | gpt-4o-mini |
+| `ANTHROPIC_API_KEY` | Anthropic | claude-haiku-4-5-20251001 |
+| `MOONSHOT_API_KEY` | Moonshot Kimi | kimi-k2.5 |
+
+Set **one** key — auto-detected. Override with `LLM_PROVIDER` and `LLM_MODEL` env vars. No key = fail-open (tasks created without AI skills).
 
 ---
 
 ## API Documentation
 
+### Tasks
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /api/tasks | List all tasks (flat array with depth field for indentation) |
-| GET | /api/tasks/:id | Get single task with recursive subtask tree |
-| POST | /api/tasks | Create task or task tree (with optional recursive subtasks) |
-| PATCH | /api/tasks/:id | Update task status or assignee (with invariant guards) |
-| GET | /api/developers | List all developers with skills |
-| GET | /api/developers/:id | Get single developer with skills |
-| GET | /api/skills | List all skills |
+| GET | `/api/tasks` | List all tasks (flat with depth). Filter: `?projectId=&status=&developerId=` |
+| GET | `/api/tasks/:id` | Get task with recursive subtask tree |
+| POST | `/api/tasks` | Create task or task tree. Auto-classifies skills via LLM if `skillIds` empty |
+| PATCH | `/api/tasks/:id` | Update status/assignee/storyPoints. Guards: cascade + skill check |
+| DELETE | `/api/tasks/:id` | Delete task and all subtasks (cascade) |
+| POST | `/api/tasks/:id/recommend-assignee` | AI-recommended developer for a task |
+| POST | `/api/tasks/:id/generate-subtasks` | AI subtask generation with direction hint |
+| POST | `/api/tasks/classify-skills` | Preview AI skill classification for a title |
 
-Key behaviors:
+### Projects
 
-- `POST /api/tasks`: If `skillIds` is empty, the backend automatically classifies required skills via LLM
-- `PATCH` with `status: "DONE"`: Returns 400 if any subtask is not Done (Invariant B)
-- `PATCH` with `developerId`: Returns 422 if developer lacks required skills (Invariant A)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/projects` | List all projects |
+| GET | `/api/projects/:id` | Get project with task summaries |
+| GET | `/api/projects/:id/tasks` | Paginated tasks. Filter: `?status=&developerId=&sortBy=&page=&limit=` |
+| POST | `/api/projects` | Create project (name + description) |
+| PATCH | `/api/projects/:id` | Update project fields |
+| DELETE | `/api/projects/:id` | Delete project (cascades to tasks) |
+| POST | `/api/projects/:id/enrich` | AI project enrichment (tech stack, architecture, domain, etc.) |
+| POST | `/api/projects/:id/generate-stories` | AI user story generation (Gherkin format) |
+| POST | `/api/projects/:id/generate-tasks` | AI task generation with direction hint |
+
+### Developers
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/developers` | List all developers with skills |
+| GET | `/api/developers/:id` | Get developer with skills |
+| POST | `/api/developers` | Create developer |
+| PATCH | `/api/developers/:id` | Update developer (name, bio, skills) |
+| DELETE | `/api/developers/:id` | Delete developer |
+| POST | `/api/developers/:id/upload-cv` | Upload PDF CV — AI skill extraction |
+| POST | `/api/developers/:id/extract-skills` | Paste CV text — AI skill extraction |
+
+### Allocation
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/allocate/scores` | All unassigned tasks with developer match scores. Filter: `?projectId=` |
+| POST | `/api/allocate/reason` | AI-generated reasoning for a task-developer pair |
+
+### Agent (Kickstart)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/agent/kickstart` | Agentic project setup. Multipart form → SSE stream. 4-step pipeline: enrich → generate tasks ∥ process team → assign & balance |
+
+### Other
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check (DB + LLM provider status) |
+| GET | `/api/skills` | List all skills |
+| GET | `/api/dashboard` | Aggregated metrics |
 
 ---
 
-## Design Assumptions
+## Docker Services
 
-These assumptions were made for ambiguities in the spec:
-
-1. **Status values:** TODO, IN_PROGRESS, DONE — all transitions allowed, only DONE entry guarded by cascade rule
-2. **Task List display:** Flat table with all tasks (root + subtasks), visually indented by depth
-3. **Subtask creation:** Create page only (per spec Part 4.3), with "Add Subtask" link from List page
-4. **LLM timing:** Synchronous with 5s batch timeout, parallelized for multiple nodes, fail-open on error
-5. **API granularity:** Both flat list and recursive tree endpoints for tasks
+| Service | Port | Description |
+|---------|------|-------------|
+| frontend | 3000 | React SPA (served via `serve`) |
+| backend | 5000 | Express API server |
+| db | 5433 | PostgreSQL 15 (application data) |
+| grafana | 3001 | Grafana dashboards (logs + traces) |
+| loki | 3100 | Log aggregation (receives pino-loki push) |
+| tempo | — | Distributed tracing (OTLP receiver) |
+| langfuse | 3002 | GenAI observability UI |
+| langfuse-worker | — | Background trace processing |
+| langfuse-db | — | PostgreSQL for Langfuse metadata |
+| langfuse-clickhouse | — | ClickHouse for Langfuse analytics |
+| langfuse-redis | — | Redis for Langfuse job queues |
+| langfuse-minio | — | S3-compatible storage for events |
+| pgadmin | 5050 | PostgreSQL admin UI |
 
 ---
 
-## Observability (Optional)
+## Development
 
-The backend includes a full observability stack — all optional, zero-config:
+```bash
+# Backend (local dev — requires PostgreSQL on port 5433)
+cd backend && npm install && npm run dev    # Port 5000
 
-### Structured Logging (Pino)
-Every request is logged as structured JSON with method, URL, status, and duration. Dev mode uses `pino-pretty` for readable output. Set `LOG_LEVEL=debug` for verbose logging.
+# Frontend (local dev)
+cd frontend && npm install && npm run dev   # Port 5173
 
-### Distributed Tracing (OpenTelemetry)
-Auto-instruments Express HTTP requests, PostgreSQL queries, and outbound LLM API calls. In dev mode, spans are printed to console. In Docker, traces are sent directly to Tempo.
+# Run tests
+cd backend && npm test                      # 88 unit tests
+cd frontend && npm test                     # 32 unit tests
+
+# E2E tests (requires both backend + frontend running)
+npx playwright test                         # 8 E2E tests
+
+# Type check
+cd backend && npm run build                 # TypeScript compile
+cd frontend && npm run build                # TypeScript + Vite build
+```
+
+---
+
+## Observability
+
+### Structured Logging (Pino → Loki)
+Every request logged as structured JSON. Dev mode uses `pino-pretty`. In Docker, logs push to Loki via pino-loki. Set `LOG_LEVEL=debug` for verbose output.
+
+### Distributed Tracing (OpenTelemetry → Tempo)
+Auto-instruments Express HTTP requests, PostgreSQL queries, and outbound LLM API calls. OTLP traces sent to Tempo. View in Grafana → Explore → Tempo.
 
 ### GenAI Observability (Langfuse)
-Traces every LLM skill classification call — latency, token usage, cost, prompt/response pairs. Set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` to enable. Sign up free at [langfuse.com](https://langfuse.com).
+Self-hosted Langfuse v3 traces every LLM call — latency, token usage, cost, prompt/response pairs. The Kickstart agent pipeline appears as a single trace with nested spans per step. Access at http://localhost:3002 (admin@capacitor.dev / admin123).
 
-### Observability Backend (Grafana + Tempo + Loki)
-
-`docker-compose up` automatically starts a complete observability backend:
-
-```
-[ Backend App ]  ──OTLP──→  [ Tempo (traces) ]
-                 ──push──→  [ Loki (logs)    ]
-                                    ↓
-                             [ Grafana UI :3001 ]
-```
-
-- **Grafana UI:** http://localhost:3001 — search traces, view logs
-- **Tempo:** Stores distributed traces (Express → Prisma → LLM call chains)
-- **Loki:** Stores structured JSON logs from Pino (via pino-loki)
-
-To view: Open Grafana → Explore → Select "Tempo" for traces or "Loki" for logs.
+### Grafana Dashboards
+http://localhost:3001 — pre-configured with Loki and Tempo data sources. Anonymous access enabled.
 
 ---
 
-## Future Improvements
+## Documentation
 
-- Upgrade to collapsible tree-table on Task List page for better UX at scale
-- Add Nginx reverse proxy to eliminate CORS (production deployment)
-- ~~Multi-provider LLM support~~ ✅ Implemented — auto-detects Google/OpenAI/Anthropic from API key
-- Proficiency levels on Developer-Skill relationship (Novice/Competent/Expert)
-- Pagination for task list endpoint (cursor-based)
-- Multi-stage Docker builds for smaller production images
+Follows the [Diataxis](https://diataxis.fr/) framework:
+
+```
+docs/
+├── tutorials/       # Guided learning experiences
+├── how-to/          # Steps to accomplish a goal
+├── reference/       # Technical descriptions, C4 diagrams
+└── concepts/        # Architecture decisions and reasoning
+```
 
 ---
 
@@ -146,11 +265,12 @@ To view: Open Grafana → Explore → Select "Tempo" for traces or "Loki" for lo
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| GOOGLE_GENERATIVE_AI_API_KEY | One of these | Google Gemini API key (free tier at ai.google.dev) |
-| OPENAI_API_KEY | required | OpenAI API key |
-| ANTHROPIC_API_KEY | | Anthropic Claude API key |
-| MOONSHOT_API_KEY | | Moonshot Kimi API key |
-| LLM_PROVIDER | No | Force provider: `google`, `openai`, `anthropic`, or `moonshot` (auto-detected if not set) |
-| LLM_MODEL | No | Override model name (e.g., `gpt-4o`, `claude-sonnet-4-20250514`, `gemini-2.5-flash`, `kimi-k2.5`) |
-
-Set **one** API key — the app auto-detects which provider to use. The `DATABASE_URL` and PostgreSQL credentials are pre-configured in `docker-compose.yml`.
+| `GOOGLE_GENERATIVE_AI_API_KEY` | One of | Google Gemini API key |
+| `OPENAI_API_KEY` | these | OpenAI API key |
+| `ANTHROPIC_API_KEY` | four | Anthropic Claude API key |
+| `MOONSHOT_API_KEY` | | Moonshot Kimi API key |
+| `LLM_PROVIDER` | No | Force provider: `google`, `openai`, `anthropic`, `moonshot` |
+| `LLM_MODEL` | No | Override model (e.g., `gpt-4o`, `claude-sonnet-4-20250514`) |
+| `DATABASE_URL` | No | Pre-configured in docker-compose.yml |
+| `LOKI_HOST` | No | Loki push URL (set in Docker, omit for local dev) |
+| `LOG_LEVEL` | No | Pino log level (default: `info`) |

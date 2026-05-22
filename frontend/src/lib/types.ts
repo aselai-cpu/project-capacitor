@@ -28,6 +28,8 @@ export interface Task {
   createdAt: string;
   projectId: string | null;
   acceptanceCriteria: string | null;
+  description: string | null;
+  storyPoints: number | null;
 }
 
 export interface Project {
@@ -90,5 +92,30 @@ export interface ScoredTask {
 
 export interface ClassifyResult {
   skillIds: string[];
+  skillNames: string[];
+}
+
+export interface ProjectTasksPage {
+  tasks: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    storyPoints: number | null;
+    acceptanceCriteria: string | null;
+    skills: Skill[];
+    developer: { id: string; name: string } | null;
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface GeneratedTask {
+  title: string;
+  description: string;
+  acceptanceCriteria: string;
+  storyPoints: number;
   skillNames: string[];
 }

@@ -1,4 +1,4 @@
-import type { Task, Developer, Skill, Project, GeneratedStory, ExtractedSkill, DashboardData, ScoredTask, ClassifyResult } from './types';
+import type { Task, Developer, Skill, Project, GeneratedStory, ExtractedSkill, DashboardData, ScoredTask, ClassifyResult, ProjectTasksPage, GeneratedTask } from './types';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -31,6 +31,7 @@ export interface CreateTaskPayload {
 export interface UpdateTaskPayload {
   status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
   developerId?: string | null;
+  storyPoints?: number;
 }
 
 export const fetchTasks = (filters?: { projectId?: string; status?: string; developerId?: string }): Promise<Task[]> => {
@@ -184,3 +185,26 @@ export const classifyTaskSkills = (title: string, acceptanceCriteria?: string): 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, acceptanceCriteria }),
   }).then(r => handleResponse<ClassifyResult>(r));
+
+// --- Project Tasks (paginated) ---
+
+export const fetchProjectTasks = (
+  projectId: string,
+  params?: { page?: number; limit?: number; status?: string; developerId?: string; sortBy?: string }
+): Promise<ProjectTasksPage> => {
+  const qs = new URLSearchParams();
+  if (params?.page) qs.set('page', String(params.page));
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.status) qs.set('status', params.status);
+  if (params?.developerId) qs.set('developerId', params.developerId);
+  if (params?.sortBy) qs.set('sortBy', params.sortBy);
+  const q = qs.toString();
+  return fetch(`${API}/api/projects/${projectId}/tasks${q ? `?${q}` : ''}`).then(r => handleResponse<ProjectTasksPage>(r));
+};
+
+export const generateTasksFromHint = (projectId: string, hint: string): Promise<{ tasks: GeneratedTask[] }> =>
+  fetch(`${API}/api/projects/${projectId}/generate-tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hint }),
+  }).then(r => handleResponse<{ tasks: GeneratedTask[] }>(r));

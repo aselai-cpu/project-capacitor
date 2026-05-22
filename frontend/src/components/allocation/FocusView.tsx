@@ -59,12 +59,12 @@ export default function FocusView({ tasks, onAssigned }: Props) {
   return (
     <>
       <div className="flex gap-6 min-h-[400px]">
-        {/* Left panel: task list */}
-        <div className="w-1/3 border rounded-lg overflow-hidden">
-          <div className="bg-gray-50 px-3 py-2 border-b font-semibold text-sm">
+        {/* Left panel: task list — fixed width, never collapses */}
+        <div className="w-[320px] min-w-[320px] border rounded-lg overflow-hidden flex flex-col">
+          <div className="bg-gray-50 px-3 py-2 border-b font-semibold text-sm flex-shrink-0">
             Unassigned Tasks ({tasks.length})
           </div>
-          <div className="overflow-y-auto max-h-[500px]">
+          <div className="overflow-y-auto flex-1">
             {tasks.map(task => (
               <button key={task.taskId}
                 onClick={() => setSelectedTaskId(task.taskId === selectedTaskId ? null : task.taskId)}
@@ -85,8 +85,8 @@ export default function FocusView({ tasks, onAssigned }: Props) {
           </div>
         </div>
 
-        {/* Right panel: recommendations */}
-        <div className="flex-1">
+        {/* Right panel: recommendations — takes remaining space, prevents overflow */}
+        <div className="flex-1 min-w-0 overflow-hidden">
           {!selectedTask ? (
             <div className="flex items-center justify-center h-full text-gray-400 text-sm">
               Select a task to see AI recommendations
@@ -94,19 +94,20 @@ export default function FocusView({ tasks, onAssigned }: Props) {
           ) : (
             <div>
               <h3 className="font-semibold mb-1">{selectedTask.taskTitle}</h3>
-              <div className="flex gap-1 mb-4">
+              <div className="flex gap-1 mb-4 flex-wrap">
                 {selectedTask.taskSkills.map(s => (
                   <span key={s} className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">{s}</span>
                 ))}
               </div>
 
               {eligible.length === 0 ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 overflow-hidden">
                   <p className="text-amber-800 font-medium text-sm">No developer has all required skills</p>
-                  <div className="mt-2 text-xs text-amber-700">
+                  <div className="mt-2 text-xs text-amber-700 space-y-2">
                     {selectedTask.scores.slice(0, 3).map(s => (
                       <div key={s.developerId} className="py-1">
-                        <span className="font-medium">{s.developerName}</span> ({s.matchPercent}%) — missing: {s.missingSkills.join(', ')}
+                        <span className="font-medium">{s.developerName}</span> ({s.matchPercent}%)
+                        <div className="text-amber-600 mt-0.5 break-words">missing: {s.missingSkills.join(', ')}</div>
                       </div>
                     ))}
                   </div>

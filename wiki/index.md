@@ -4,13 +4,13 @@ Content catalog for Project Capacitor wiki. Read this first.
 
 ## Overview
 
-- [[wiki/overview]] -- Project synthesis: tech stack, scope (7 parts), key business rules
+- [[wiki/overview]] -- Project synthesis: 12 Docker services, AI-assisted task allocation, Allocation Copilot, Langfuse observability
 
 ## Entities
 
-- [[wiki/entities/developer]] -- Developer entity: name, skills, task assignments, seed data
-- [[wiki/entities/task]] -- Task entity: title, required skills, status, assignee, subtask rules
-- [[wiki/entities/skill]] -- Skill entity: name, many-to-many with developers and tasks
+- [[wiki/entities/developer]] -- Developer entity: name, skills, bio, CV upload, task assignments
+- [[wiki/entities/task]] -- Task entity: title, description, acceptance criteria, story points, skills, status, subtasks, project
+- [[wiki/entities/skill]] -- Skill entity: name, many-to-many with developers and tasks, categorized (Languages/Frameworks/Infrastructure/Data/Tools/AI-ML)
 
 ## Requirements
 
@@ -30,6 +30,12 @@ Content catalog for Project Capacitor wiki. Read this first.
 - [[wiki/decisions/004-vercel-ai-sdk]] -- ADR-004: Vercel AI SDK for provider-agnostic LLM with Zod structured output
 - [[wiki/decisions/005-vite-react-frontend]] -- ADR-005: Vite + React 19 + React Router v7 + Tailwind CSS for SPA frontend
 - [[wiki/decisions/006-express-backend]] -- ADR-006: Express.js + Zod validation for backend REST API (Hono noted as future upgrade)
+
+## Design Specs (added 2026-05-22)
+
+- [[docs/superpowers/specs/2026-05-22-ux-redesign-allocation-copilot]] -- UX redesign: Dashboard, Allocation Copilot (Matrix/Kanban/Focus), NavBar restructure, AI-first task creation
+- [[docs/superpowers/specs/2026-05-22-project-detail-rich-task-management]] -- Rich task management: paginated tasks, expandable rows, Fibonacci story points, AI task generation with hints
+- [[docs/superpowers/specs/2026-05-22-task-detail-subtask-management]] -- Task Detail page, recursive subtask tree, AI subtask generation, task deletion
 
 ## Notes
 

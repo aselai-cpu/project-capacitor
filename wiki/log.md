@@ -156,3 +156,38 @@ Evaluated 6 Node.js/TypeScript backend frameworks:
 
 Pages created:
 - [[wiki/decisions/006-express-backend]] — ADR with Zod validation pattern and full comparison
+
+## [2026-05-22] update | UX Redesign + Rich Task Management + Task Detail + Langfuse
+
+Major session: implemented full UX redesign, rich task management, task detail page, and self-hosted Langfuse.
+
+### Features implemented:
+- **Dashboard** (`/dashboard`) — metrics, allocation CTA, workload bars. Default home page.
+- **Allocation Copilot** (`/allocate`) — 3 views: Matrix (score grid), Kanban (drag-and-drop with @dnd-kit/core), Focus (AI reasoning split panel)
+- **Navigation restructure** — `Dashboard | Team | Projects | Tasks(n) | Allocate(n)` with attention badges
+- **AI-first task creation** — LLM auto-classifies skills on blur, categorized manual override
+- **Project detail tabs** — spec fields as clickable tabs
+- **Rich task management** — paginated/filterable/sortable task list on project detail, expandable accordion rows with description/AC/skills/editable Fibonacci story points
+- **AI task generation** — PM provides direction hint, AI generates 3-5 tasks with full details
+- **Task Detail page** (`/tasks/:id`) — dedicated page with subtask tree, AI subtask generation, task deletion
+- **Recursive subtask management** — SubtaskTree component, expand/collapse, delete per node
+- **Task deletion** — `DELETE /api/tasks/:id` with cascade
+- **Removed `/tasks/new`** — inline task creation on project detail, subtask management on task detail
+- **Self-hosted Langfuse v3** — 6 Docker services (web, worker, PostgreSQL, ClickHouse, Redis, MinIO), auto-integrated with backend
+
+### Backend endpoints added:
+- `GET /api/dashboard`, `GET /api/allocate/scores`, `POST /api/allocate/reason`
+- `POST /api/tasks/classify-skills`, `DELETE /api/tasks/:id`, `POST /api/tasks/:id/generate-subtasks`
+- `GET /api/projects/:id/tasks`, `POST /api/projects/:id/generate-tasks`
+
+### Design specs created:
+- `docs/superpowers/specs/2026-05-22-ux-redesign-allocation-copilot.md`
+- `docs/superpowers/specs/2026-05-22-project-detail-rich-task-management.md`
+- `docs/superpowers/specs/2026-05-22-task-detail-subtask-management.md`
+
+### Files removed:
+- `TaskCreatePage.tsx`, `TaskFormNode.tsx`, `treeUtils.ts` + their tests — replaced by inline creation and Task Detail page
+
+Pages updated:
+- [[wiki/overview]] — complete rewrite with all 19 features, 12 Docker services, API endpoints
+- [[wiki/index]] — added design specs section

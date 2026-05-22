@@ -17,7 +17,7 @@ export default function TaskCreatePage() {
 
   const [classifiedSkillIds, setClassifiedSkillIds] = useState<string[]>([]);
   const [classifying, setClassifying] = useState(false);
-  const classifyTimer = useRef<ReturnType<typeof setTimeout>>();
+  const classifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetchSkills()

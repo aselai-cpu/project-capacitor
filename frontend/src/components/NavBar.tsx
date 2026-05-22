@@ -34,6 +34,10 @@ export default function NavBar() {
           <span className="ml-1.5 bg-white/30 text-white text-xs px-1.5 py-0.5 rounded-full">{unassignedCount}</span>
         )}
       </Link>
+      <Link to="/kickstart"
+        className={`px-3 py-1.5 rounded text-sm font-semibold ${pathname.startsWith('/kickstart') ? 'bg-purple-700 text-white' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
+        Kickstart
+      </Link>
     </nav>
   );
 }

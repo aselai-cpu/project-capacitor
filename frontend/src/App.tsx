@@ -9,6 +9,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import DeveloperListPage from './pages/DeveloperListPage';
 import DeveloperProfilePage from './pages/DeveloperProfilePage';
 import AllocationPage from './pages/AllocationPage';
+import KickstartPage from './pages/KickstartPage';
 
 function DevRedirect() {
   const { id } = useParams();
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/tasks" element={<TaskListPage />} />
         <Route path="/tasks/:id" element={<TaskDetailPage />} />
         <Route path="/allocate" element={<AllocationPage />} />
+        <Route path="/kickstart" element={<KickstartPage />} />
         <Route path="/developers/:id" element={<DevRedirect />} />
         <Route path="/developers" element={<Navigate to="/team" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -19,6 +19,27 @@ router.get('/:id', asyncHandler(async (req, res) => {
   res.json(project);
 }));
 
+// GET /api/projects/:id/tasks — Paginated project tasks
+router.get('/:id/tasks', asyncHandler(async (req, res) => {
+  const project = await projectService.getProjectById(req.params.id as string);
+  if (!project) { res.status(404).json({ error: 'Project not found' }); return; }
+
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+  const status = req.query.status as string | undefined;
+  const developerId = req.query.developerId as string | undefined;
+  const sortBy = (req.query.sortBy as string) || 'newest';
+
+  const result = await projectService.getProjectTasks(req.params.id as string, {
+    page,
+    limit,
+    sortBy,
+    ...(status !== undefined && { status }),
+    ...(developerId !== undefined && { developerId }),
+  });
+  res.json(result);
+}));
+
 router.post('/', validate(createProjectSchema), asyncHandler(async (req, res) => {
   const project = await projectService.createProject(req.body);
   res.status(201).json(project);

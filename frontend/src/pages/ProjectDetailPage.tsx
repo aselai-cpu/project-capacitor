@@ -3,11 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import type { Project, GeneratedStory } from '../lib/types';
 import { fetchProject, enrichProjectApi, generateStories, createTask } from '../lib/api';
 
+const SPEC_TABS = ['Architecture', 'Domain', 'Requirements', 'Constraints', 'Stakeholders'] as const;
+type SpecTab = typeof SPEC_TABS[number];
+
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [enriching, setEnriching] = useState(false);
+  const [activeTab, setActiveTab] = useState<SpecTab>('Architecture');
 
   // Story generation state
   const [stories, setStories] = useState<GeneratedStory[]>([]);
@@ -113,21 +117,38 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
-      {/* Project Spec Fields */}
-      <div className="grid gap-4 mb-8">
-        {[
-          { label: 'Architecture', value: project.architecture },
-          { label: 'Domain', value: project.domain },
-          { label: 'Requirements', value: project.requirements },
-          { label: 'Constraints', value: project.constraints },
-          { label: 'Stakeholders', value: project.stakeholders },
-        ].map(field => field.value && (
-          <div key={field.label} className="border rounded p-3">
-            <h3 className="text-sm font-semibold text-gray-600 mb-1">{field.label}</h3>
-            <p className="text-sm whitespace-pre-line">{field.value}</p>
+      {/* Project Spec Tabs */}
+      {(() => {
+        const specFields: Record<SpecTab, string | null> = {
+          Architecture: project.architecture,
+          Domain: project.domain,
+          Requirements: project.requirements,
+          Constraints: project.constraints,
+          Stakeholders: project.stakeholders,
+        };
+        const availableTabs = SPEC_TABS.filter(t => specFields[t]);
+        if (availableTabs.length === 0) return null;
+        const currentTab = availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
+        return (
+          <div className="mb-8">
+            <div className="flex border-b">
+              {availableTabs.map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+                    currentTab === tab
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <div className="border border-t-0 rounded-b-lg p-4">
+              <p className="text-sm whitespace-pre-line">{specFields[currentTab]}</p>
+            </div>
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Story Generation Panel */}
       <div className="border-t pt-6 mb-8">

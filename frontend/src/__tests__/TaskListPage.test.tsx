@@ -22,6 +22,8 @@ const mockTask: Task = {
   createdAt: '2026-05-21T00:00:00Z',
   projectId: null,
   acceptanceCriteria: null,
+  description: null,
+  storyPoints: null,
 };
 
 const mockDeveloper: Developer = {

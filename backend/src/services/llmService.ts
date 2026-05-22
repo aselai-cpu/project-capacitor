@@ -471,3 +471,76 @@ Write a 1-2 sentence explanation of why this developer is a good fit for this ta
     return 'AI reasoning unavailable.';
   }
 }
+
+// --- Balanced task assignment ---
+
+const assignmentSchema = z.object({
+  assignments: z.array(z.object({
+    taskId: z.string(),
+    developerId: z.string(),
+    reason: z.string(),
+  })),
+});
+
+export interface AssignmentTask {
+  id: string;
+  title: string;
+  storyPoints: number | null;
+  skills: string[];
+}
+
+export interface AssignmentDeveloper {
+  id: string;
+  name: string;
+  skills: string[];
+}
+
+export async function assignTasksBalanced(
+  tasks: AssignmentTask[],
+  developers: AssignmentDeveloper[],
+  feedback?: string,
+): Promise<{ assignments: { taskId: string; developerId: string; reason: string }[] }> {
+  const model = await getModel();
+
+  const totalPoints = tasks.reduce((sum, t) => sum + (t.storyPoints ?? 0), 0);
+  const targetPerDev = developers.length > 0 ? Math.round(totalPoints / developers.length) : 0;
+
+  const taskList = tasks.map(t =>
+    `- "${t.title}" (id: ${t.id}, ${t.storyPoints ?? 0} pts) — skills: ${t.skills.join(', ') || 'none'}`
+  ).join('\n');
+
+  const devList = developers.map(d =>
+    `- ${d.name} (id: ${d.id}) — skills: ${d.skills.join(', ')}`
+  ).join('\n');
+
+  const feedbackBlock = feedback ? `\n\nPREVIOUS ATTEMPT FEEDBACK:\n${feedback}\n` : '';
+
+  const { object } = await generateObject({
+    model,
+    schema: assignmentSchema,
+    prompt: `You are a project manager AI. Assign every task to a developer.
+
+HARD CONSTRAINTS:
+- Every task must be assigned to exactly one developer
+- Developer must have at least 1 relevant skill (adjacent skills count — e.g. JavaScript dev can do React/TypeScript work)
+- Do NOT assign tasks where there is zero skill relevance
+
+OPTIMIZATION GOAL:
+- Balance total story points across developers as evenly as possible
+- Target: ~${targetPerDev} points per developer (${totalPoints} total / ${developers.length} developers)
+
+TASKS:
+${taskList}
+
+DEVELOPERS:
+${devList}
+${feedbackBlock}
+Return a JSON array of assignments. Each assignment has taskId, developerId, and a 1-sentence reason.`,
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: { feature: 'assign-tasks-balanced', taskCount: String(tasks.length) },
+    },
+  });
+
+  return object;
+}

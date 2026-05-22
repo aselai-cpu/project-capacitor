@@ -30,10 +30,10 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-}
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_TIMEOUT_MS: "15000"
-      # Langfuse GenAI observability (optional)
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
-      LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-}
+      # Langfuse GenAI observability — auto-configured for local Langfuse
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-cap-local}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-cap-local}
+      LANGFUSE_BASEURL: ${LANGFUSE_BASEURL:-http://langfuse:3000}
       # Observability — traces direct to Tempo, logs direct to Loki
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
@@ -86,6 +86,114 @@ services:
       - loki
       - tempo
 
+  # ── Langfuse (GenAI Observability) ───────────────────────────
+
+  langfuse-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 5s
+      retries: 5
+
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server:24.12
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: langfuse
+      CLICKHOUSE_USER: langfuse
+      CLICKHOUSE_PASSWORD: langfuse
+    volumes:
+      - langfuse-chdata:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1", "--user", "langfuse", "--password", "langfuse"]
+      interval: 5s
+      retries: 5
+
+  langfuse-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  langfuse-minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: langfuse
+      MINIO_ROOT_PASSWORD: langfuse123
+    volumes:
+      - langfuse-minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      retries: 5
+
+  langfuse-minio-init:
+    image: minio/mc:latest
+    depends_on:
+      langfuse-minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://langfuse-minio:9000 langfuse langfuse123;
+      mc mb local/langfuse --ignore-existing;
+      exit 0;
+      "
+
+  langfuse:
+    image: langfuse/langfuse:3
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_USER: langfuse
+      CLICKHOUSE_PASSWORD: langfuse
+      REDIS_HOST: langfuse-redis
+      REDIS_PORT: "6379"
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_ENABLED: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: us-east-1
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: langfuse123
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_ENABLED: "false"
+      NEXTAUTH_SECRET: capacitor-langfuse-secret-key-change-in-prod
+      NEXTAUTH_URL: http://localhost:3002
+      SALT: capacitor-langfuse-salt-change-in-prod
+      LANGFUSE_INIT_ORG_ID: capacitor
+      LANGFUSE_INIT_ORG_NAME: Capacitor
+      LANGFUSE_INIT_PROJECT_ID: capacitor-project
+      LANGFUSE_INIT_PROJECT_NAME: Capacitor Backend
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-cap-local
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-cap-local
+      LANGFUSE_INIT_USER_EMAIL: admin@capacitor.dev
+      LANGFUSE_INIT_USER_PASSWORD: admin123
+      LANGFUSE_INIT_USER_NAME: Admin
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+      langfuse-redis:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+
   # pgAdmin — PostgreSQL admin UI
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -105,3 +213,6 @@ services:
 
 volumes:
   pgdata:
+  langfuse-pgdata:
+  langfuse-chdata:
+  langfuse-minio:

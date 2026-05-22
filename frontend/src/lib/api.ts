@@ -226,3 +226,69 @@ export const generateSubtasks = (taskId: string, hint: string): Promise<{ tasks:
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ hint }),
   }).then(r => handleResponse<{ tasks: GeneratedTask[] }>(r));
+
+// --- Kickstart Agent API (SSE) ---
+
+export interface KickstartPayload {
+  name: string;
+  description: string;
+  existingDeveloperIds: string[];
+  newMembers: { name: string; cvText?: string }[];
+  cvFiles: File[];
+}
+
+export function kickstartProject(
+  payload: KickstartPayload,
+  onEvent: (event: string, data: unknown) => void,
+): { abort: () => void } {
+  const controller = new AbortController();
+
+  const formData = new FormData();
+  formData.append('name', payload.name);
+  formData.append('description', payload.description);
+  formData.append('existingDeveloperIds', JSON.stringify(payload.existingDeveloperIds));
+  formData.append('newMembers', JSON.stringify(payload.newMembers));
+  payload.cvFiles.forEach((file, i) => {
+    formData.append(`cv_${i}`, file);
+  });
+
+  fetch(`${API}/api/agent/kickstart`, {
+    method: 'POST',
+    body: formData,
+    signal: controller.signal,
+  }).then(async (response) => {
+    const reader = response.body?.getReader();
+    if (!reader) return;
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      let currentEvent = '';
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          currentEvent = line.slice(7);
+        } else if (line.startsWith('data: ') && currentEvent) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            onEvent(currentEvent, data);
+          } catch { /* ignore parse errors */ }
+          currentEvent = '';
+        }
+      }
+    }
+  }).catch((err) => {
+    if (err.name !== 'AbortError') {
+      onEvent('error', { error: err.message });
+    }
+  });
+
+  return { abort: () => controller.abort() };
+}

@@ -15,6 +15,7 @@ export interface TaskWithRelations {
   updatedAt: Date;
   skills: { id: string; name: string }[];
   developer: { id: string; name: string } | null;
+  project: { id: string; name: string } | null;
 }
 
 export interface TaskWithDepth extends TaskWithRelations {

@@ -5,7 +5,7 @@ import { createTaskSchema, updateTaskSchema } from '../types.js';
 import * as taskService from '../services/taskService.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { logger } from '../lib/logger.js';
-import { classifySkills } from '../services/llmService.js';
+import { classifySkills, generateSubtasks } from '../services/llmService.js';
 import prisma from '../lib/prisma.js';
 
 const router = Router();
@@ -53,6 +53,13 @@ router.post('/:id/recommend-assignee', asyncHandler(async (req, res) => {
     return;
   }
   res.json(recommendation);
+}));
+
+// DELETE /api/tasks/:id — Delete single task (cascades to subtasks)
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const deleted = await taskService.deleteTask(req.params.id as string);
+  if (!deleted) { res.status(404).json({ error: 'Task not found' }); return; }
+  res.json({ deleted: true });
 }));
 
 // Test cleanup endpoint — deletes all tasks (for E2E test isolation)

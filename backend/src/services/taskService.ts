@@ -11,6 +11,7 @@ import type { TaskWithRelations } from './taskUtils.js';
 const taskInclude = {
   skills: { select: { id: true, name: true } },
   developer: { select: { id: true, name: true } },
+  project: { select: { id: true, name: true } },
 };
 
 // --- Discriminated union return type for updateTask ---
@@ -167,6 +168,14 @@ export async function getRecommendedAssignee(taskId: string) {
     }));
 
   return recommendDeveloper(task.title, taskSkillNames, eligible);
+}
+
+// --- DELETE /api/tasks/:id (single task with cascade) ---
+export async function deleteTask(id: string): Promise<boolean> {
+  const exists = await prisma.task.findUnique({ where: { id }, select: { id: true } });
+  if (!exists) return false;
+  await prisma.task.delete({ where: { id } });
+  return true;
 }
 
 // --- DELETE /api/tasks (test cleanup) ---

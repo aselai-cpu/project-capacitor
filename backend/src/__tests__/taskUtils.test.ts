@@ -23,6 +23,7 @@ function makeTask(overrides: Record<string, unknown>) {
     updatedAt: new Date('2024-01-01T00:00:00Z'),
     skills: [],
     developer: null,
+    project: null,
     ...overrides,
   };
 }

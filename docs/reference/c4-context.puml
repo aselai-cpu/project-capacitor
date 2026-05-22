@@ -1,0 +1,20 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context Diagram — Project Capacitor
+
+Person(pm, "Project Manager", "Creates projects, reviews\nassignments, monitors progress")
+Person(dev, "Developer", "Views assigned tasks,\nuploads CV")
+
+System(capacitor, "Capacitor", "Enterprise task assignment platform\nwith AI-powered project kickstart,\nskill extraction, and workload-balanced\ndeveloper allocation")
+
+System_Ext(llm, "LLM Provider", "OpenAI / Anthropic / Google Gemini / Moonshot\nProvides generative AI for project enrichment,\ntask generation, CV parsing, and assignment")
+System_Ext(langfuse, "Langfuse", "Self-hosted GenAI observability\nTraces and monitors all LLM calls\nwith cost, latency, and token metrics")
+
+Rel(pm, capacitor, "Kickstarts projects, manages tasks,\nreviews allocations", "HTTPS")
+Rel(dev, capacitor, "Views tasks, uploads CV", "HTTPS")
+Rel(capacitor, llm, "Generates tasks, extracts skills,\nenriches projects, assigns developers", "HTTPS / API")
+Rel(capacitor, langfuse, "Sends LLM call traces\nand telemetry", "OTLP / HTTP")
+
+SHOW_LEGEND()
+@enduml

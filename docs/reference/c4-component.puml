@@ -1,0 +1,70 @@
+@startuml C4_Component
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram — Backend API
+
+Container_Boundary(backend, "Backend API (Express + TypeScript)") {
+
+    Component(middleware, "Middleware", "Express middleware", "CORS, pino-http logging,\nJSON parsing, Zod validation,\nasyncHandler error wrapper")
+
+    Component_Ext(routes_group, "Routes Layer", "", "Express routers")
+
+    Component(taskRoutes, "Task Routes", "/api/tasks", "CRUD, classify-skills,\nrecommend-assignee,\ngenerate-subtasks, delete")
+    Component(projectRoutes, "Project Routes", "/api/projects", "CRUD, enrich, generate-stories,\ngenerate-tasks, paginated tasks")
+    Component(devRoutes, "Developer Routes", "/api/developers", "CRUD, upload-cv,\nextract-skills")
+    Component(agentRoutes, "Agent Routes", "/api/agent", "POST /kickstart — SSE endpoint\nwith multer multipart parsing")
+    Component(allocateRoutes, "Allocate Routes", "/api/allocate", "GET /scores, POST /reason")
+    Component(dashRoutes, "Dashboard Routes", "/api/dashboard", "Aggregated metrics")
+
+    Component(agentService, "Agent Service", "agentService.ts", "Kickstart pipeline orchestrator.\n4-step SSE flow: enrich → tasks ∥ team → assign.\nRetry logic, balance validation,\nparallel execution via Promise.all")
+    Component(taskService, "Task Service", "taskService.ts", "Task CRUD with tree hierarchy.\nStatus cascade guards,\nskill superset validation,\nLLM skill classification on create")
+    Component(llmService, "LLM Service", "llmService.ts", "Provider-agnostic LLM calls via\nVercel AI SDK + Zod schemas.\nenrichProject, generateTasks,\nextractSkillsFromCV, classifySkills,\nassignTasksBalanced,\nrecommendDeveloper")
+    Component(allocService, "Allocation Service", "allocationService.ts", "Skill match scoring algorithm.\nDeveloper ranking by overlap %,\nworkload, and top-pick selection")
+    Component(projectService, "Project Service", "projectService.ts", "Project CRUD,\npaginated task queries")
+    Component(dashService, "Dashboard Service", "dashboardService.ts", "Aggregated project/task/team metrics")
+
+    Component(prisma, "Prisma ORM", "prisma.ts", "Database client.\nModels: Project, Task, Developer,\nSkill (many-to-many)")
+    Component(logger, "Logger", "logger.ts", "Pino logger with\npino-loki transport\nand pino-pretty for dev")
+    Component(instrumentation, "Instrumentation", "instrumentation.ts", "OpenTelemetry SDK setup.\nOTLP exporter → Tempo.\nLangfuseExporter → Langfuse.")
+}
+
+ContainerDb(db, "PostgreSQL", "PostgreSQL 15", "Application data")
+System_Ext(llm, "LLM Provider", "OpenAI / Anthropic /\nGoogle Gemini / Moonshot")
+Container(loki, "Loki", "Grafana Loki", "Log aggregation")
+Container(tempo, "Tempo", "Grafana Tempo", "Distributed tracing")
+Container(langfuse, "Langfuse", "Langfuse v3", "GenAI observability")
+
+Rel(middleware, taskRoutes, "Routes requests")
+Rel(middleware, projectRoutes, "Routes requests")
+Rel(middleware, devRoutes, "Routes requests")
+Rel(middleware, agentRoutes, "Routes requests")
+Rel(middleware, allocateRoutes, "Routes requests")
+Rel(middleware, dashRoutes, "Routes requests")
+
+Rel(agentRoutes, agentService, "Delegates kickstart flow")
+Rel(taskRoutes, taskService, "Task operations")
+Rel(taskRoutes, llmService, "classify-skills, generate-subtasks")
+Rel(projectRoutes, projectService, "Project CRUD")
+Rel(projectRoutes, llmService, "enrich, generate-stories, generate-tasks")
+Rel(devRoutes, llmService, "extractSkillsFromCV")
+Rel(allocateRoutes, allocService, "Scores and reasoning")
+Rel(dashRoutes, dashService, "Metrics")
+
+Rel(agentService, llmService, "enrichProject, generateTasks,\nextractSkillsFromCV,\nassignTasksBalanced")
+Rel(agentService, taskService, "createTask")
+Rel(agentService, prisma, "project.create, developer.create,\nskill.upsert, task.update")
+Rel(taskService, llmService, "classifySkills on create")
+Rel(taskService, prisma, "Task CRUD")
+Rel(allocService, llmService, "generateAllocationReason")
+Rel(allocService, prisma, "Queries tasks + developers")
+Rel(projectService, prisma, "Project CRUD")
+Rel(dashService, prisma, "Aggregate queries")
+Rel(llmService, llm, "generateObject() via\nVercel AI SDK", "HTTPS")
+
+Rel(prisma, db, "SQL queries", "TCP")
+Rel(logger, loki, "Push logs", "HTTP")
+Rel(instrumentation, tempo, "OTLP traces", "HTTP")
+Rel(instrumentation, langfuse, "LLM telemetry", "HTTP")
+
+SHOW_LEGEND()
+@enduml

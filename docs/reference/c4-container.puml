@@ -1,0 +1,50 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram — Project Capacitor
+
+Person(pm, "Project Manager", "Kickstarts projects, manages tasks")
+Person(dev, "Developer", "Views tasks, uploads CV")
+
+System_Boundary(capacitor, "Capacitor Platform") {
+    Container(frontend, "Frontend", "React, Vite, Tailwind CSS", "SPA with dashboard, task management,\nallocation views, and kickstart wizard.\nPort 3000")
+    Container(backend, "Backend API", "Node.js, Express, TypeScript", "REST API with SSE streaming.\nLLM orchestration, task CRUD,\nallocation scoring.\nPort 5000")
+    ContainerDb(db, "PostgreSQL", "PostgreSQL 15", "Projects, tasks, developers,\nskills, assignments.\nPort 5433")
+}
+
+System_Boundary(observability, "Observability Stack") {
+    Container(grafana, "Grafana", "Grafana OSS", "Dashboards for logs and traces.\nPort 3001")
+    Container(loki, "Loki", "Grafana Loki", "Log aggregation.\nPort 3100")
+    Container(tempo, "Tempo", "Grafana Tempo", "Distributed tracing.\nOTLP receiver")
+}
+
+System_Boundary(langfuse_stack, "Langfuse Stack") {
+    Container(langfuse, "Langfuse", "Langfuse v3", "GenAI observability UI.\nLLM call traces, cost, latency.\nPort 3002")
+    Container(langfuse_worker, "Langfuse Worker", "Langfuse Worker", "Background job processor\nfor trace ingestion")
+    ContainerDb(langfuse_db, "Langfuse DB", "PostgreSQL", "Langfuse metadata storage")
+    ContainerDb(clickhouse, "ClickHouse", "ClickHouse", "Analytics and trace storage")
+    ContainerDb(redis, "Redis", "Redis", "Caching and job queues")
+    ContainerDb(minio, "MinIO", "MinIO S3", "Event and media storage")
+}
+
+System_Ext(llm, "LLM Provider", "OpenAI / Anthropic /\nGoogle Gemini / Moonshot")
+
+Rel(pm, frontend, "Uses", "HTTPS")
+Rel(dev, frontend, "Uses", "HTTPS")
+Rel(frontend, backend, "REST + SSE", "HTTP")
+Rel(backend, db, "Reads/writes", "Prisma ORM")
+Rel(backend, llm, "generateObject() calls", "HTTPS")
+Rel(backend, loki, "Pushes structured logs", "pino-loki / HTTP")
+Rel(backend, tempo, "Sends traces", "OTLP / HTTP")
+Rel(backend, langfuse, "LLM call telemetry", "Vercel AI SDK telemetry")
+Rel(langfuse, langfuse_db, "Stores metadata", "SQL")
+Rel(langfuse, clickhouse, "Stores traces", "HTTP")
+Rel(langfuse, redis, "Job queues", "Redis protocol")
+Rel(langfuse, minio, "Event uploads", "S3 API")
+Rel(langfuse_worker, langfuse_db, "Processes jobs", "SQL")
+Rel(langfuse_worker, clickhouse, "Writes analytics", "HTTP")
+Rel(grafana, loki, "Queries logs", "LogQL")
+Rel(grafana, tempo, "Queries traces", "TraceQL")
+
+SHOW_LEGEND()
+@enduml

@@ -154,13 +154,16 @@ export async function getRecommendedAssignee(taskId: string) {
     },
   });
 
-  // Filter to eligible developers (skill superset)
+  // Filter to developers with at least one matching skill, sorted by overlap (best first)
   const eligible: DeveloperInfo[] = allDevs
-    .filter(d => {
+    .map(d => {
       const devSkillIds = new Set(d.skills.map(s => s.id));
-      return task.skills.every(s => devSkillIds.has(s.id));
+      const overlap = task.skills.filter(s => devSkillIds.has(s.id)).length;
+      return { d, overlap };
     })
-    .map(d => ({
+    .filter(({ overlap }) => overlap > 0)
+    .sort((a, b) => b.overlap - a.overlap)
+    .map(({ d }) => ({
       id: d.id,
       name: d.name,
       skills: d.skills.map(s => s.name),

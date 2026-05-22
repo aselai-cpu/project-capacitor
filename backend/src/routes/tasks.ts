@@ -48,10 +48,6 @@ router.patch('/:id', validate(updateTaskSchema), asyncHandler(async (req, res) =
 // AI-recommended developer assignment
 router.post('/:id/recommend-assignee', asyncHandler(async (req, res) => {
   const recommendation = await taskService.getRecommendedAssignee(req.params.id as string);
-  if (!recommendation) {
-    res.status(404).json({ error: 'No recommendation available' });
-    return;
-  }
   res.json(recommendation);
 }));
 

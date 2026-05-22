@@ -59,13 +59,14 @@ describe('TaskListPage', () => {
     });
   });
 
-  it('renders "Create Task" link pointing to /tasks/new', async () => {
+  it('renders the Tasks heading without a Create Task button', async () => {
     const { fetchTasks, fetchDevelopers, fetchProjects } = await import('../lib/api');
     vi.mocked(fetchTasks).mockResolvedValue([]);
     vi.mocked(fetchDevelopers).mockResolvedValue([]);
     vi.mocked(fetchProjects).mockResolvedValue([]);
     render(<MemoryRouter><TaskListPage /></MemoryRouter>);
-    expect(screen.getByRole('link', { name: 'Create Task' })).toHaveAttribute('href', '/tasks/new');
+    expect(screen.getByRole('heading', { name: 'Tasks' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Create Task' })).not.toBeInTheDocument();
   });
 
   it('renders table headers', async () => {

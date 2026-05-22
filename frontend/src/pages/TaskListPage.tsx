@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import type { Task, Developer, Project } from '../lib/types';
 import { fetchTasks, fetchDevelopers, fetchProjects } from '../lib/api';
 import TaskRow from '../components/TaskRow';

@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import TaskRow from '../components/TaskRow';
 import type { Task, Developer } from '../lib/types';
 
 vi.mock('../lib/api', () => ({
   updateTask: vi.fn(() => Promise.resolve({})),
+  deleteTask: vi.fn(() => Promise.resolve()),
+  recommendAssignee: vi.fn(() => Promise.resolve(null)),
 }));
 
 
@@ -43,11 +46,13 @@ const mockTask: Task = {
 function renderRow(task: Task, developers: Developer[] = mockDevelopers) {
   const onUpdate = vi.fn();
   render(
-    <table>
-      <tbody>
-        <TaskRow task={task} developers={developers} onUpdate={onUpdate} />
-      </tbody>
-    </table>
+    <MemoryRouter>
+      <table>
+        <tbody>
+          <TaskRow task={task} developers={developers} onUpdate={onUpdate} />
+        </tbody>
+      </table>
+    </MemoryRouter>
   );
   return { onUpdate };
 }
@@ -104,11 +109,11 @@ describe('TaskRow', () => {
     expect(screen.queryByRole('option', { name: 'Bob' })).not.toBeInTheDocument();
   });
 
-  it('shows "+ Subtask" link with correct href', () => {
+  it('shows "Details" link pointing to task detail page', () => {
     renderRow(mockTask);
-    const link = screen.getByRole('link', { name: 'Add subtask to Build homepage' });
+    const link = screen.getByRole('link', { name: 'View details for Build homepage' });
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/tasks/new?parentId=task-1');
+    expect(link).toHaveAttribute('href', '/tasks/task-1');
   });
 
   it('calls updateTask and onUpdate when assignee changes', async () => {

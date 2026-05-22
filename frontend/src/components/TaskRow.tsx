@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Task, Developer } from '../lib/types';
-import { updateTask, recommendAssignee } from '../lib/api';
+import { updateTask, recommendAssignee, deleteTask } from '../lib/api';
 import type { UpdateTaskPayload, Recommendation } from '../lib/api';
 
 interface Props {
@@ -51,11 +52,23 @@ export default function TaskRow({ task, developers, onUpdate }: Props) {
     setLoadingRec(false);
   };
 
+  const handleDeleteTask = async () => {
+    if (!confirm(`Delete "${task.title}" and all its subtasks?`)) return;
+    try {
+      await deleteTask(task.id);
+    } catch {
+      // ignore — refresh will show current state
+    }
+    onUpdate();
+  };
+
   return (
     <tr className="border-b hover:bg-gray-50">
       <td style={{ paddingLeft: `${task.depth * 24 + 8}px` }} className="py-3 pr-4">
         {task.depth > 0 && <span className="text-gray-400 mr-1">↳</span>}
-        {task.title}
+        <Link to={`/tasks/${task.id}`} className="hover:text-blue-600 hover:underline">
+          {task.title}
+        </Link>
       </td>
       <td className="py-3 pr-4">
         {task.skills.map(s => (
@@ -101,9 +114,12 @@ export default function TaskRow({ task, developers, onUpdate }: Props) {
         )}
       </td>
       <td className="py-3">
-        <a href={`/tasks/new?parentId=${task.id}`} aria-label={`Add subtask to ${task.title}`} className="text-blue-600 text-sm hover:underline">
-          + Subtask
-        </a>
+        <Link to={`/tasks/${task.id}`} aria-label={`View details for ${task.title}`} className="text-blue-600 text-sm hover:underline">
+          Details
+        </Link>
+        <button onClick={handleDeleteTask} className="text-red-400 hover:text-red-600 text-sm ml-2" title="Delete task">
+          🗑
+        </button>
       </td>
     </tr>
   );

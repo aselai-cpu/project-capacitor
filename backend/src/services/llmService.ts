@@ -285,6 +285,79 @@ Return ONLY skills from the available list above. Return an empty array if no sk
   }
 }
 
+// --- Task generation with direction hint ---
+
+const generateTasksSchema = z.object({
+  tasks: z.array(z.object({
+    title: z.string(),
+    description: z.string(),
+    acceptanceCriteria: z.string(),
+    storyPoints: z.number().int(),
+    skillNames: z.array(z.string()),
+  })),
+});
+
+export interface GenerateTasksContext {
+  name: string;
+  description?: string;
+  techStack: string[];
+  architecture?: string;
+  domain?: string;
+  requirements?: string;
+  constraints?: string;
+  existingTaskTitles: string[];
+  availableSkillNames: string[];
+  hint: string;
+}
+
+export async function generateTasks(ctx: GenerateTasksContext) {
+  const model = await getModel();
+  const { object } = await generateObject({
+    model,
+    schema: generateTasksSchema,
+    prompt: `You are a senior project manager creating software development tasks.
+
+## Project Context
+Name: ${ctx.name}
+Description: ${ctx.description || 'N/A'}
+Tech Stack: ${ctx.techStack.join(', ') || 'N/A'}
+Architecture: ${ctx.architecture || 'N/A'}
+Domain: ${ctx.domain || 'N/A'}
+Requirements: ${ctx.requirements || 'N/A'}
+Constraints: ${ctx.constraints || 'N/A'}
+
+## Existing Tasks (avoid duplicates)
+${ctx.existingTaskTitles.length > 0 ? ctx.existingTaskTitles.map(t => `- ${t}`).join('\n') : 'None yet'}
+
+## Available Skills
+${ctx.availableSkillNames.join(', ')}
+
+## Direction
+${ctx.hint}
+
+Generate 3-5 new development tasks in this direction. For each task provide:
+- title: user story format ("As a [role], I want [feature] so that [benefit]")
+- description: 2-3 sentences of technical implementation detail
+- acceptanceCriteria: Gherkin format (Given/When/Then)
+- storyPoints: Fibonacci number (1, 2, 3, 5, 8, 13, 21) based on complexity
+- skillNames: required skills from the available list above ONLY
+
+Do NOT duplicate existing tasks. Each task should be independently implementable.`,
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: { feature: 'generate-tasks', projectName: ctx.name },
+    },
+  });
+
+  // Filter skillNames to only include skills that exist in the available list
+  return {
+    tasks: object.tasks.map(t => ({
+      ...t,
+      skillNames: t.skillNames.filter(s => ctx.availableSkillNames.includes(s)),
+    })),
+  };
+}
+
 // --- Allocation reasoning ---
 
 export async function generateAllocationReason(

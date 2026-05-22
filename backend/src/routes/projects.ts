@@ -2,9 +2,10 @@ import { Router } from 'express';
 import { validate } from '../middleware/validate.js';
 import { createProjectSchema, updateProjectSchema } from '../types.js';
 import * as projectService from '../services/projectService.js';
-import { enrichProject, generateUserStories } from '../services/llmService.js';
+import { enrichProject, generateUserStories, generateTasks } from '../services/llmService.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { logger } from '../lib/logger.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
 
@@ -91,6 +92,44 @@ router.post('/:id/generate-stories', asyncHandler(async (req, res) => {
   } catch (err) {
     logger.warn({ err, projectId: project.id }, 'LLM story generation failed');
     res.status(502).json({ error: 'AI story generation failed — try again later' });
+  }
+}));
+
+// LLM: Generate tasks with direction hint
+router.post('/:id/generate-tasks', asyncHandler(async (req, res) => {
+  const project = await projectService.getProjectById(req.params.id as string);
+  if (!project) { res.status(404).json({ error: 'Project not found' }); return; }
+
+  const { hint } = req.body as { hint?: string };
+  if (!hint || typeof hint !== 'string') {
+    res.status(400).json({ error: 'hint is required' }); return;
+  }
+
+  try {
+    const [existingTasks, skills] = await Promise.all([
+      prisma.task.findMany({ where: { projectId: project.id }, select: { title: true } }),
+      prisma.skill.findMany({ select: { name: true } }),
+    ]);
+
+    const taskCtx: import('../services/llmService.js').GenerateTasksContext = {
+      name: project.name,
+      techStack: project.techStack,
+      existingTaskTitles: existingTasks.map(t => t.title),
+      availableSkillNames: skills.map(s => s.name),
+      hint,
+    };
+    if (project.description) taskCtx.description = project.description;
+    if (project.architecture) taskCtx.architecture = project.architecture;
+    if (project.domain) taskCtx.domain = project.domain;
+    if (project.requirements) taskCtx.requirements = project.requirements;
+    if (project.constraints) taskCtx.constraints = project.constraints;
+
+    const result = await generateTasks(taskCtx);
+
+    res.json(result);
+  } catch (err) {
+    logger.warn({ err, projectId: project.id }, 'LLM task generation failed');
+    res.status(502).json({ error: 'AI task generation failed — try again later' });
   }
 }));
 

@@ -358,6 +358,80 @@ Do NOT duplicate existing tasks. Each task should be independently implementable
   };
 }
 
+// --- Subtask generation ---
+
+const generateSubtasksSchema = z.object({
+  tasks: z.array(z.object({
+    title: z.string(),
+    description: z.string(),
+    acceptanceCriteria: z.string(),
+    storyPoints: z.number().int(),
+    skillNames: z.array(z.string()),
+  })),
+});
+
+export interface GenerateSubtasksContext {
+  taskTitle: string;
+  taskDescription?: string;
+  taskAcceptanceCriteria?: string;
+  taskSkills: string[];
+  projectName?: string;
+  projectTechStack?: string[];
+  projectArchitecture?: string;
+  existingSubtaskTitles: string[];
+  availableSkillNames: string[];
+  hint: string;
+}
+
+export async function generateSubtasks(ctx: GenerateSubtasksContext) {
+  const model = await getModel();
+  const { object } = await generateObject({
+    model,
+    schema: generateSubtasksSchema,
+    prompt: `You are a senior developer breaking down a task into smaller, independently implementable subtasks.
+
+## Parent Task
+Title: ${ctx.taskTitle}
+Description: ${ctx.taskDescription || 'N/A'}
+Acceptance Criteria: ${ctx.taskAcceptanceCriteria || 'N/A'}
+Required Skills: ${ctx.taskSkills.join(', ') || 'N/A'}
+
+${ctx.projectName ? `## Project Context
+Name: ${ctx.projectName}
+Tech Stack: ${ctx.projectTechStack?.join(', ') || 'N/A'}
+Architecture: ${ctx.projectArchitecture || 'N/A'}` : ''}
+
+## Existing Subtasks (avoid duplicates)
+${ctx.existingSubtaskTitles.length > 0 ? ctx.existingSubtaskTitles.map(t => `- ${t}`).join('\n') : 'None yet'}
+
+## Available Skills
+${ctx.availableSkillNames.join(', ')}
+
+## Direction
+${ctx.hint}
+
+Generate 3-5 granular, workable subtasks. Each subtask should be small enough for one developer to complete in 1-3 days. For each provide:
+- title: clear action ("Implement X", "Create Y", "Configure Z")
+- description: 2-3 sentences of implementation detail
+- acceptanceCriteria: Gherkin format (Given/When/Then)
+- storyPoints: Fibonacci number (1, 2, 3, 5, 8, 13, 21) based on complexity
+- skillNames: required skills from the available list above ONLY
+
+Do NOT duplicate existing subtasks. Each subtask should be independently implementable.`,
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: { feature: 'generate-subtasks', taskTitle: ctx.taskTitle },
+    },
+  });
+
+  return {
+    tasks: object.tasks.map(t => ({
+      ...t,
+      skillNames: t.skillNames.filter(s => ctx.availableSkillNames.includes(s)),
+    })),
+  };
+}
+
 // --- Allocation reasoning ---
 
 export async function generateAllocationReason(

@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-
 import NavBar from './components/NavBar';
 import DashboardPage from './pages/DashboardPage';
 import TaskListPage from './pages/TaskListPage';
-import TaskCreatePage from './pages/TaskCreatePage';
+import TaskDetailPage from './pages/TaskDetailPage';
 import ProjectListPage from './pages/ProjectListPage';
 import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
@@ -27,7 +27,7 @@ export default function App() {
         <Route path="/projects/new" element={<ProjectCreatePage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/tasks" element={<TaskListPage />} />
-        <Route path="/tasks/new" element={<TaskCreatePage />} />
+        <Route path="/tasks/:id" element={<TaskDetailPage />} />
         <Route path="/allocate" element={<AllocationPage />} />
         <Route path="/developers/:id" element={<DevRedirect />} />
         <Route path="/developers" element={<Navigate to="/team" replace />} />

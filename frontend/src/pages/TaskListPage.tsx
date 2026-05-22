@@ -68,9 +68,6 @@ export default function TaskListPage() {
 
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Tasks</h1>
-        <Link to="/tasks/new" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Create Task
-        </Link>
       </div>
 
       {/* Filter bar */}

@@ -42,6 +42,11 @@ export default function ProjectDetailPage() {
   const [generating, setGenerating] = useState(false);
   const [addingGen, setAddingGen] = useState(false);
 
+  // Inline task creation state
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDesc, setNewTaskDesc] = useState('');
+  const [creatingTask, setCreatingTask] = useState(false);
+
   // Reference data
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -143,6 +148,26 @@ export default function ProjectDetailPage() {
       alert('Failed to create some tasks');
     } finally {
       setAddingGen(false);
+    }
+  };
+
+  const handleCreateTask = async () => {
+    if (!newTaskTitle.trim() || !id) return;
+    setCreatingTask(true);
+    try {
+      await createTask({
+        title: newTaskTitle.trim(),
+        skillIds: [],
+        projectId: id,
+        ...(newTaskDesc.trim() ? { description: newTaskDesc.trim() } : {}),
+      });
+      setNewTaskTitle('');
+      setNewTaskDesc('');
+      loadTasks();
+    } catch {
+      alert('Failed to create task');
+    } finally {
+      setCreatingTask(false);
     }
   };
 
@@ -270,7 +295,9 @@ export default function ProjectDetailPage() {
                 >
                   <span className="flex items-center gap-2">
                     <span className="text-gray-400">{expandedTaskId === task.id ? '▼' : '►'}</span>
-                    <span>{task.title}</span>
+                    <Link to={`/tasks/${task.id}`} className="hover:text-blue-600 hover:underline" onClick={e => e.stopPropagation()}>
+                      {task.title}
+                    </Link>
                   </span>
                   <span className="flex items-center gap-3">
                     <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[task.status] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -424,10 +451,19 @@ export default function ProjectDetailPage() {
           )}
         </div>
 
-        {/* Create Task Link */}
-        <Link to={`/tasks/new?projectId=${project.id}`} className="text-blue-600 text-sm hover:underline">
-          + Create Task
-        </Link>
+        {/* Inline Create Task Form */}
+        <div className="border rounded-lg p-4 mt-4">
+          <h3 className="text-sm font-semibold mb-2">Create Task</h3>
+          <input type="text" value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)}
+            placeholder="Task title..." className="w-full border rounded px-3 py-1.5 text-sm mb-2" />
+          <textarea value={newTaskDesc} onChange={e => setNewTaskDesc(e.target.value)}
+            placeholder="Description (optional)..." rows={2}
+            className="w-full border rounded px-3 py-1.5 text-sm mb-2" />
+          <button onClick={handleCreateTask} disabled={!newTaskTitle.trim() || creatingTask}
+            className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50">
+            {creatingTask ? 'Creating...' : 'Create'}
+          </button>
+        </div>
       </div>
     </div>
   );

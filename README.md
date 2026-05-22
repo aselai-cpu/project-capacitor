@@ -2,6 +2,8 @@
 
 Enterprise-grade task assignment platform with AI-powered project kickstart, skill extraction from CVs, workload-balanced developer allocation, and full observability. Built for the xDigital AI Products Team at HTX.
 
+> **Demo:** [Watch the 45-second feature walkthrough](docs/demo.webm) — Dashboard, Projects, Tasks, Team, Allocation views, Kickstart, Grafana logs, Langfuse traces.
+
 ---
 
 ## Quick Start

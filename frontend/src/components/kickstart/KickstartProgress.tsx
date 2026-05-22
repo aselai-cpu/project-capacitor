@@ -8,12 +8,6 @@ interface Props {
   assignments: AssignmentEvent[];
 }
 
-const STEP_CONFIG = [
-  { key: 'enrich', label: 'Enrich project description' },
-  { key: 'parallel', label: null },
-  { key: 'assign', label: 'Assign & balance workload' },
-] as const;
-
 function StepIcon({ status }: { status?: string }) {
   if (status === 'done') return <div className="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center text-sm">✓</div>;
   if (status === 'running' || status === 'retrying')
